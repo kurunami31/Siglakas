@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { getViewerState } from "@/lib/server-state";
 import { Icon } from "@/components/icons";
+import { PartnerLogos } from "@/components/partner-logos";
 import { terms } from "@/lib/terminology";
 
 export const dynamic = "force-dynamic";
@@ -104,6 +105,11 @@ export default async function WelcomePage() {
             </Link>
           ))}
         </div>
+      </section>
+
+      <section className="panel rounded-2xl p-5">
+        <h2 className="font-display text-center text-xl text-parchment">Organised by</h2>
+        <PartnerLogos className="mt-4" />
       </section>
 
       <p className="text-center text-xs text-foam/60">

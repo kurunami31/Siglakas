@@ -29,6 +29,13 @@ const OUTPUTS: Array<{ to: string; size: number }> = [
 
 const kb = (n: number) => `${(n / 1024).toFixed(1)}KB`;
 
+const PARTNERS: Array<{ from: string; to: string }> = [
+  { from: "dorsu-logo.png", to: "public/brand/partners/dorsu.png" },
+  { from: "OSCAL Logo.jpg", to: "public/brand/partners/oscal.png" },
+  { from: "OFFICE OF THE STUDENT SPORTS AND WELLNESS.jpg", to: "public/brand/partners/students-sports.png" },
+  { from: "USC.jpg", to: "public/brand/partners/usc.png" },
+];
+
 async function main() {
   const info = await stat(source).catch(() => null);
   if (!info) {
@@ -53,7 +60,26 @@ async function main() {
     console.log(`  wrote       : ${to.padEnd(38)} ${size}x${size}  ${kb(out.size)}`);
   }
 
-  console.log("\n  done. Commit the generated files, not the master.\n");
+  // The institutional partner marks. Flattened onto white so they read as one
+  // set on the dark footer, whether the master had transparency or not.
+  console.log("");
+  for (const { from, to } of PARTNERS) {
+    const exists = await stat(from).catch(() => null);
+    if (!exists) {
+      console.log(`  skipped     : ${from} (not found)`);
+      continue;
+    }
+    await mkdir(path.dirname(to), { recursive: true });
+    await sharp(from)
+      .resize(256, 256, { fit: "contain", background: "#ffffff" })
+      .flatten({ background: "#ffffff" })
+      .png({ compressionLevel: 9 })
+      .toFile(to);
+    const out = await stat(to);
+    console.log(`  wrote       : ${to.padEnd(38)} 256x256  ${kb(out.size)}`);
+  }
+
+  console.log("\n  done. Commit the generated files, not the masters.\n");
 }
 
 void main().catch((err) => {

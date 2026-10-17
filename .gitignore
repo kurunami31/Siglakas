@@ -44,6 +44,10 @@ siglakas-*.json
 # Master brand artwork: multi-megabyte, and the site uses the generated
 # copies under /public/brand (see public/brand/README.md).
 /*Logo*.png
+/dorsu-logo.png
+/OSCAL Logo.jpg
+/USC.jpg
+/OFFICE OF THE STUDENT SPORTS AND WELLNESS.jpg
 
 # vercel
 .vercel
