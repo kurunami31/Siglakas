@@ -100,7 +100,7 @@ export default async function WelcomePage() {
       </section>
 
       <section className="panel rounded-2xl p-5">
-        <h2 className="font-display text-center text-xl text-parchment">Organised by</h2>
+        <h2 className="font-display text-center text-xl text-parchment">Organized by</h2>
         <PartnerLogos className="mt-4" />
       </section>
 

@@ -8,7 +8,6 @@ import { Ticker } from "@/components/ticker";
 import { Icon } from "@/components/icons";
 import { getViewerState } from "@/lib/server-state";
 import { getSession } from "@/lib/auth/server";
-import { PartnerLogos } from "@/components/partner-logos";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -71,7 +70,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               {state.config.schoolName} · Original pirate-inspired artwork. Crew mascot logos are the property of their
               respective faculties and campuses.
             </p>
-            <PartnerLogos className="mt-4" />
             <p className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
               <Link href="/welcome" className="min-h-6 text-foam/70 hover:text-straw hover:underline">
                 Welcome

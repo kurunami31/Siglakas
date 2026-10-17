@@ -20,7 +20,7 @@ const PARTNERS = [
 export function PartnerLogos({ className = "" }: { className?: string }) {
   return (
     <ul
-      aria-label="Festival organisers and offices"
+      aria-label="Festival organizers and offices"
       className={`flex flex-wrap items-start justify-center gap-x-2 gap-y-3 sm:gap-x-4 ${className}`}
     >
       {PARTNERS.map((p) => (
