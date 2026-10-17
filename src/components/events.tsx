@@ -64,9 +64,9 @@ export function EventExplorer() {
     <section className="space-y-4">
       <div className="space-y-2">
         <div className="flex flex-wrap items-end justify-between gap-3">
-          <h2 className="font-display flex items-center gap-2 text-3xl text-parchment sm:text-4xl">
+          <h1 className="font-display flex items-center gap-2 text-3xl text-parchment sm:text-4xl">
             <Icon name="map" size={28} className="text-straw" /> {t.islands}
-          </h2>
+          </h1>
           <PrintButton label="Print the list" />
         </div>
         <div className="grid gap-2 sm:grid-cols-3">

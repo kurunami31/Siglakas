@@ -39,10 +39,10 @@ export function Leaderboard({ state, dense = false }: { state: CompetitionState;
   return (
     <section aria-labelledby="leaderboard-heading" className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <h2 id="leaderboard-heading" className="font-display flex items-center gap-2 text-3xl text-parchment sm:text-4xl">
+        <h1 id="leaderboard-heading" className="font-display flex items-center gap-2 text-3xl text-parchment sm:text-4xl">
           <Icon name="flag" size={28} className="text-straw" />
           {t.leaderboard}
-        </h2>
+        </h1>
         <p className="text-xs text-foam/75">
           Ranked across all {state.teams.length} {t.teams.toLowerCase()} · filters only change what is shown
         </p>

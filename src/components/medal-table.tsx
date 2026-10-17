@@ -36,9 +36,9 @@ export function MedalTally() {
   return (
     <section aria-labelledby="medals-heading" className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <h2 id="medals-heading" className="font-display flex items-center gap-2 text-3xl text-parchment sm:text-4xl">
+        <h1 id="medals-heading" className="font-display flex items-center gap-2 text-3xl text-parchment sm:text-4xl">
           <Icon name="medal" size={28} className="text-straw" /> Medal Tally
-        </h2>
+        </h1>
         <p className="text-xs text-foam/75">Tie-break: total medals → golds → silvers</p>
         <PrintButton label="Print the tally" />
       </div>

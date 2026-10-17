@@ -4,6 +4,7 @@ import Link from "next/link";
 import { getViewerState } from "@/lib/server-state";
 import { Icon } from "@/components/icons";
 import { PartnerLogos } from "@/components/partner-logos";
+import { SplitText } from "@/components/split-text";
 import { terms } from "@/lib/terminology";
 
 export const dynamic = "force-dynamic";
@@ -45,7 +46,7 @@ export default async function WelcomePage() {
           {state.config.schoolName}
         </p>
         <h1 className="font-display mt-1 text-4xl text-parchment sm:text-6xl">
-          {state.config.competitionName}
+          <SplitText text={state.config.competitionName} delay={0.1} />
         </h1>
         <p className="font-display mt-2 text-2xl text-straw sm:text-3xl">
           {state.config.subtitle || "Grand Line Tally"}
