@@ -86,11 +86,15 @@ export function CrewParade({ teams }: { teams: Team[] }) {
           </motion.div>
         </div>
 
-        <div aria-hidden className="absolute bottom-0 left-0 h-16 w-full opacity-70">
-          <svg viewBox="0 0 2400 120" preserveAspectRatio="none" className="h-full w-[200%] animate-[wave_12s_linear_infinite] text-ocean-2">
-            <path fill="currentColor" d="M0,60 C300,110 500,10 800,55 C1100,100 1300,20 1600,60 C1900,100 2100,25 2400,60 L2400,120 L0,120 Z" />
-          </svg>
-        </div>
+      </div>
+
+      {/* Pinned to the bottom of the SCREEN, not to the content wrapper.
+          Anchored to the wrapper the sea sat mid-screen and left a band of
+          empty space below the intro. */}
+      <div aria-hidden className="absolute inset-x-0 bottom-0 h-24 w-full opacity-70">
+        <svg viewBox="0 0 2400 120" preserveAspectRatio="none" className="h-full w-[200%] animate-[wave_12s_linear_infinite] text-ocean-2">
+          <path fill="currentColor" d="M0,60 C300,110 500,10 800,55 C1100,100 1300,20 1600,60 C1900,100 2100,25 2400,60 L2400,120 L0,120 Z" />
+        </svg>
       </div>
     </div>
   );

@@ -409,7 +409,11 @@ async function main() {
       addBanding: {
         bandedRange: {
           range: { sheetId: sid, startRowIndex: 1, endRowIndex: rows + 1, startColumnIndex: 0, endColumnIndex: HEADERS[TAB_KEY[title]].length },
-          rowProperties: { headerColor: C.ink, firstBandColor: C.band2, secondBandColor: C.band1 },
+          // Deliberately NO `headerColor`. A banded range paints its header
+          // colour onto the FIRST ROW OF THE RANGE — and this range starts at
+          // row 2, so row 2 was being turned into a second dark header bar on
+          // every banded tab. Row 1 is styled explicitly by the header pass.
+          rowProperties: { firstBandColor: C.band2, secondBandColor: C.band1 },
         },
       },
     });

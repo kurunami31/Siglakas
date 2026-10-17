@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useLive } from "./providers";
@@ -26,12 +27,14 @@ export function SiteHeader() {
     <header className="sticky top-0 z-40 border-b border-foam/15 bg-ink/80 backdrop-blur-md print:hidden">
       <div className="mx-auto flex max-w-7xl items-center gap-3 px-3 py-2 sm:px-5">
         <Link href="/welcome" className="flex min-w-0 items-center gap-2.5">
-          <span
-            aria-hidden
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-straw text-ink shadow-[0_0_20px_-4px_var(--color-straw)] sm:h-10 sm:w-10"
-          >
-            <Icon name="compass" size={20} strokeWidth={1.9} />
-          </span>
+          <Image
+            src="/brand/siglakas-logo.png"
+            alt=""
+            width={80}
+            height={80}
+            priority
+            className="h-9 w-9 shrink-0 rounded-lg bg-white object-cover shadow-[0_0_20px_-6px_var(--color-straw)] ring-1 ring-straw/50 sm:h-10 sm:w-10"
+          />
           <span className="min-w-0">
             <span className="font-display block truncate text-lg leading-none text-parchment sm:text-xl">
               {state.config.subtitle || "Grand Line Tally"}
