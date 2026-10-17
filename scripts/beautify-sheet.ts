@@ -1,0 +1,700 @@
+/**
+ * Make the Grand Line Tally spreadsheet presentable and easy to work in.
+ *
+ *   npm run beautify-sheet          # apply
+ *   npm run beautify-sheet -- --dry-run
+ *
+ * Safe to re-run: it deletes the banding and conditional-format rules it
+ * previously created before re-adding them, and it never touches the app's
+ * data columns. Two tabs are added that the website does not read or write:
+ *
+ *   Dashboard - a live medal table computed with formulas from Results+Events
+ *   Guide     - who edits what, and the rules that keep the site working
+ *
+ * The website reads each tab with A1:Z and rewrites its own columns with
+ * values.update, so:
+ *   - extra columns inside A:Z on an app tab are wiped on the next app write;
+ *   - the Dashboard's helper columns live at T:Y and are hidden.
+ */
+import { getAccessToken, loadCredentialsFromEnv, SheetsClient } from "../src/lib/data/google";
+import { HEADERS, TABS } from "../src/lib/data/sheets-repo";
+
+const BASE = "https://sheets.googleapis.com/v4/spreadsheets";
+const DRY = process.argv.includes("--dry-run");
+const SHOW_ALL = process.argv.includes("--show-all");
+
+/**
+ * Tabs that matter on the day: the live medal table, the raw tally, the team
+ * fixtures, the event catalogue and the point rules. Everything else is
+ * plumbing — machine-written logs, reference tables and the password store —
+ * so it is hidden to keep the sheet navigable.
+ *
+ * Visibility is cosmetic: the Sheets API reads and writes hidden tabs
+ * identically, so nothing in the app depends on this. `--show-all` reverts it.
+ */
+const KEEP_VISIBLE = ["Dashboard", "Results", "Matches", "Events", "Config"];
+
+type RGB = { red: number; green: number; blue: number };
+
+/** Palette borrowed from the website so the sheet matches the site. */
+const C = {
+  ink: { red: 0.05, green: 0.12, blue: 0.2 },
+  ink2: { red: 0.1, green: 0.2, blue: 0.3 },
+  straw: { red: 0.98, green: 0.75, blue: 0.14 },
+  gold: { red: 1.0, green: 0.91, blue: 0.58 },
+  silver: { red: 0.87, green: 0.89, blue: 0.92 },
+  bronze: { red: 0.93, green: 0.8, blue: 0.65 },
+  foam: { red: 0.85, green: 0.93, blue: 0.96 },
+  white: { red: 1, green: 1, blue: 1 },
+  blood: { red: 0.72, green: 0.16, blue: 0.2 },
+  leaf: { red: 0.16, green: 0.53, blue: 0.36 },
+  teal: { red: 0.12, green: 0.45, blue: 0.51 },
+  blue: { red: 0.16, green: 0.35, blue: 0.62 },
+  indigo: { red: 0.3, green: 0.28, blue: 0.6 },
+  purple: { red: 0.45, green: 0.3, blue: 0.6 },
+  slate: { red: 0.42, green: 0.45, blue: 0.5 },
+  brown: { red: 0.45, green: 0.33, blue: 0.22 },
+  grey: { red: 0.55, green: 0.57, blue: 0.6 },
+  amber: { red: 1.0, green: 0.94, blue: 0.78 },
+  band1: { red: 0.965, green: 0.976, blue: 0.984 },
+  band2: { red: 1, green: 1, blue: 1 },
+  muted: { red: 0.62, green: 0.64, blue: 0.66 },
+  greenTint: { red: 0.9, green: 0.96, blue: 0.92 },
+} satisfies Record<string, RGB>;
+
+interface SheetSpec {
+  color: RGB;
+  freezeCols: number;
+  /** grid row count — must be >= the largest write, or values.update fails */
+  rows: number;
+  /** column index -> pixel width */
+  width: Record<number, number>;
+  wrap?: number[];
+  center?: number[];
+  filterRows?: number;
+}
+
+const ORDER = [
+  "Dashboard",
+  "Guide",
+  "Config",
+  "Teams",
+  "Events",
+  "Criteria",
+  "Matches",
+  "JudgeScores",
+  "Results",
+  "Announcements",
+  "AuditLog",
+  "Users",
+];
+
+const SPEC: Record<string, SheetSpec> = {
+  Dashboard: { color: C.straw, freezeCols: 0, rows: 200, width: { 0: 58, 1: 230, 2: 92, 3: 92, 4: 92, 5: 100, 6: 120 } },
+  Guide: { color: C.teal, freezeCols: 0, rows: 100, width: { 0: 175, 1: 175, 2: 720 } },
+  Config: { color: C.slate, freezeCols: 1, rows: 200, width: { 0: 230, 1: 470, 2: 120, 3: 200 }, wrap: [1, 3], filterRows: 40 },
+  Teams: {
+    color: C.leaf,
+    freezeCols: 2,
+    rows: 200,
+    width: { 0: 80, 1: 300, 2: 110, 3: 165, 4: 90, 5: 140, 6: 175, 7: 320, 8: 320 },
+    wrap: [7],
+    center: [4],
+    filterRows: 40,
+  },
+  Events: {
+    color: C.teal,
+    freezeCols: 2,
+    rows: 500,
+    width: { 0: 155, 1: 285, 2: 100, 3: 155, 4: 115, 5: 105, 6: 80, 7: 95, 8: 130, 9: 165, 10: 100, 11: 80, 12: 80, 13: 340 },
+    wrap: [13],
+    center: [5, 7, 11, 12],
+    filterRows: 260,
+  },
+  Criteria: {
+    color: C.purple,
+    freezeCols: 2,
+    rows: 1000,
+    width: { 0: 160, 1: 270, 2: 90, 3: 80 },
+    center: [2, 3],
+    filterRows: 320,
+  },
+  Matches: {
+    color: C.blue,
+    freezeCols: 2,
+    rows: 2000,
+    width: { 0: 230, 1: 155, 2: 160, 3: 110, 4: 110, 5: 80, 6: 80, 7: 220, 8: 110, 9: 95 },
+    wrap: [7],
+    center: [5, 6, 9],
+    filterRows: 400,
+  },
+  JudgeScores: {
+    color: C.indigo,
+    freezeCols: 3,
+    rows: 12000,
+    width: { 0: 160, 1: 110, 2: 150, 3: 210, 4: 90 },
+    center: [4],
+    filterRows: 2000,
+  },
+  Results: {
+    color: C.straw,
+    freezeCols: 2,
+    rows: 4000,
+    width: { 0: 160, 1: 110, 2: 100, 3: 70, 4: 115, 5: 140, 6: 185 },
+    center: [2, 3, 4],
+    filterRows: 1200,
+  },
+  Announcements: {
+    color: C.blood,
+    freezeCols: 1,
+    rows: 1000,
+    width: { 0: 190, 1: 640, 2: 150 },
+    wrap: [1],
+    filterRows: 200,
+  },
+  AuditLog: {
+    color: C.grey,
+    freezeCols: 3,
+    rows: 20000,
+    width: { 0: 190, 1: 135, 2: 155, 3: 135, 4: 155, 5: 145, 6: 210, 7: 210 },
+    wrap: [6, 7],
+    filterRows: 2000,
+  },
+  Users: {
+    color: C.brown,
+    freezeCols: 1,
+    rows: 200,
+    width: { 0: 160, 1: 430, 2: 130, 3: 110, 4: 90 },
+    center: [4],
+    filterRows: 40,
+  },
+};
+
+/* ------------------------------------------------------------------ *
+ * Dashboard formulas
+ * ------------------------------------------------------------------ */
+
+const RES_TEAM = "Results!$B$2:$B$2000";
+const RES_PLACE = "Results!$C$2:$C$2000";
+const RES_STATUS = "Results!$E$2:$E$2000";
+const RES_EVENT = "Results!$A$2:$A$2000";
+const EV_ID = "Events!$A$2:$A$500";
+const EV_DIV = "Events!$C$2:$C$500";
+const EV_CAT = "Events!$D$2:$D$500";
+const EV_WEIGHT = "Events!$F$2:$F$500";
+
+const PUBLISHED = `(LOWER(${RES_STATUS})="published")`;
+const WEIGHT_OF = `SUMIF(${EV_ID},${RES_EVENT},${EV_WEIGHT})`;
+
+/** Medals for one crew, filtered by a placement condition. */
+function medals(teamCell: string, placementCondition: string): string {
+  return `=SUMPRODUCT((${RES_TEAM}=${teamCell})*(${placementCondition})*${PUBLISHED}*${WEIGHT_OF})`;
+}
+
+const CATEGORIES = [
+  "Team Sports",
+  "E-Sports",
+  "Individual/Dual Sports",
+  "Traditional Games",
+  "Mind Games",
+  "Special Event",
+  "Visual Arts",
+  "Music Arts",
+  "Dance Arts",
+  "Dramatic Arts",
+  "Literary Arts",
+  "Special Category",
+];
+
+interface Meta {
+  title: string;
+  sheets: Array<{
+    sheetId: number;
+    title: string;
+    gridProperties?: { frozenRowCount?: number; frozenColumnCount?: number; columnCount?: number; rowCount?: number };
+    tabColorStyle?: { rgbColor?: RGB };
+    bandedRanges?: Array<{ bandedRangeId?: number }>;
+    conditionalFormats?: unknown[];
+  }>;
+}
+
+async function fetchMeta(id: string, token: string): Promise<Meta> {
+  const fields = [
+    "properties.title",
+    "sheets.properties(sheetId,title,gridProperties,tabColorStyle)",
+    "sheets.bandedRanges",
+    "sheets.conditionalFormats",
+  ].join(",");
+  const res = await fetch(`${BASE}/${id}?fields=${fields}`, {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`metadata failed: ${res.status} ${await res.text()}`);
+  const data = (await res.json()) as {
+    properties?: { title?: string };
+    sheets?: Array<{ properties: NonNullable<Meta["sheets"]>[number] & { sheetId: number; title: string } } & {
+      bandedRanges?: Array<{ bandedRangeId?: number }>;
+      conditionalFormats?: unknown[];
+    }>;
+  };
+  return {
+    title: data.properties?.title ?? "",
+    sheets: (data.sheets ?? []).map((s) => ({
+      ...s.properties,
+      bandedRanges: s.bandedRanges ?? [],
+      conditionalFormats: s.conditionalFormats ?? [],
+    })),
+  };
+}
+
+async function main() {
+  const loader = (process as unknown as { loadEnvFile?: (p: string) => void }).loadEnvFile;
+  if (loader) for (const f of [".env.local", ".env"]) { try { loader(f); } catch { /* absent */ } }
+
+  const id = process.env.GOOGLE_SHEET_ID;
+  if (!id) throw new Error("GOOGLE_SHEET_ID is not set");
+  const creds = loadCredentialsFromEnv();
+  if (!creds) throw new Error("no credentials (set GOOGLE_SERVICE_ACCOUNT_FILE)");
+
+  const client = new SheetsClient(id, creds);
+  const token0 = await getAccessToken(creds);
+
+  console.log("");
+  console.log("  Grand Line Tally - beautify spreadsheet");
+  console.log("  --------------------------------------");
+
+  // 1. make sure the two human-facing tabs exist
+  await client.ensureTabs(["Dashboard", "Guide"]);
+  const meta = await fetchMeta(id, await getAccessToken(creds));
+  const sheetId = (title: string) => meta.sheets.find((s) => s.title === title)?.sheetId;
+
+  console.log(`  spreadsheet : ${meta.title}`);
+  console.log(`  tabs        : ${meta.sheets.map((s) => s.title).join(", ")}`);
+  console.log("");
+
+  const requests: unknown[] = [];
+
+  /* ---------------------------------------------------------------- *
+   * 2. per-tab structure: colours, frozen panes, widths, header row
+   * ---------------------------------------------------------------- */
+  for (const title of ORDER) {
+    const sid = sheetId(title);
+    const spec = SPEC[title];
+    if (sid === undefined || !spec) continue;
+
+    requests.push({
+      updateSheetProperties: {
+        properties: {
+          sheetId: sid,
+          hidden: SHOW_ALL ? false : !KEEP_VISIBLE.includes(title),
+          tabColorStyle: { rgbColor: spec.color },
+          gridProperties: {
+            frozenRowCount: 1,
+            frozenColumnCount: spec.freezeCols,
+            rowCount: Math.max(spec.rows, (meta.sheets.find((s) => s.title === title)?.gridProperties?.rowCount ?? 0)),
+          },
+        },
+        fields: "hidden,tabColorStyle,gridProperties.frozenRowCount,gridProperties.frozenColumnCount,gridProperties.rowCount",
+      },
+    });
+
+    // widths
+    for (const [col, px] of Object.entries(spec.width)) {
+      requests.push({
+        updateDimensionProperties: {
+          range: { sheetId: sid, dimension: "COLUMNS", startIndex: Number(col), endIndex: Number(col) + 1 },
+          properties: { pixelSize: px },
+          fields: "pixelSize",
+        },
+      });
+    }
+
+    // header row: white on deep ocean, wrapped, tall
+    requests.push({
+      repeatCell: {
+        range: { sheetId: sid, startRowIndex: 0, endRowIndex: 1 },
+        cell: {
+          userEnteredFormat: {
+            backgroundColor: C.ink,
+            textFormat: { bold: true, foregroundColor: C.white, fontSize: 10 },
+            horizontalAlignment: "LEFT",
+            verticalAlignment: "MIDDLE",
+            wrapStrategy: "WRAP",
+          },
+        },
+        fields: "userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,verticalAlignment,wrapStrategy)",
+      },
+    });
+    requests.push({
+      updateDimensionProperties: {
+        range: { sheetId: sid, dimension: "ROWS", startIndex: 0, endIndex: 1 },
+        properties: { pixelSize: 36 },
+        fields: "pixelSize",
+      },
+    });
+
+    // data cells: middle-aligned; wrap / centre where asked
+    const dataRange = { sheetId: sid, startRowIndex: 1, endRowIndex: 4000 };
+    requests.push({
+      repeatCell: {
+        range: dataRange,
+        cell: { userEnteredFormat: { verticalAlignment: "MIDDLE" } },
+        fields: "userEnteredFormat.verticalAlignment",
+      },
+    });
+    for (const col of spec.wrap ?? []) {
+      requests.push({
+        repeatCell: {
+          range: { sheetId: sid, startRowIndex: 1, endRowIndex: 4000, startColumnIndex: col, endColumnIndex: col + 1 },
+          cell: { userEnteredFormat: { wrapStrategy: "WRAP" } },
+          fields: "userEnteredFormat.wrapStrategy",
+        },
+      });
+    }
+    for (const col of spec.center ?? []) {
+      requests.push({
+        repeatCell: {
+          range: { sheetId: sid, startRowIndex: 1, endRowIndex: 4000, startColumnIndex: col, endColumnIndex: col + 1 },
+          cell: { userEnteredFormat: { horizontalAlignment: "CENTER" } },
+          fields: "userEnteredFormat.horizontalAlignment",
+        },
+      });
+    }
+
+    // filters, so a PIO can sort/filter without breaking column order
+    if (spec.filterRows) {
+      const cols = title === "Dashboard" || title === "Guide" ? undefined : HEADERS[TAB_KEY[title]].length;
+      if (cols) {
+        requests.push({
+          setBasicFilter: {
+            filter: {
+              range: { sheetId: sid, startRowIndex: 0, endRowIndex: spec.filterRows + 1, startColumnIndex: 0, endColumnIndex: cols },
+            },
+          },
+        });
+      }
+    }
+  }
+
+  const dashboardId = sheetId("Dashboard");
+  const guideId = sheetId("Guide");
+
+  /* ---------------------------------------------------------------- *
+   * 3. rewrite banding + conditional formats from scratch (idempotent)
+   * ---------------------------------------------------------------- */
+  for (const title of ORDER) {
+    const metaSheet = meta.sheets.find((s) => s.title === title);
+    if (!metaSheet) continue;
+    for (const band of metaSheet.bandedRanges ?? []) {
+      if (band.bandedRangeId !== undefined) requests.push({ deleteBanding: { bandedRangeId: band.bandedRangeId } });
+    }
+    const cfCount = (metaSheet.conditionalFormats ?? []).length;
+    for (let i = cfCount - 1; i >= 0; i--) {
+      requests.push({ deleteConditionalFormatRule: { sheetId: metaSheet.sheetId, index: i } });
+    }
+  }
+
+  // zebra striping on the hand-edited tables
+  for (const title of ["Teams", "Events", "Criteria", "Matches", "Results", "JudgeScores", "AuditLog", "Announcements", "Users"]) {
+    const sid = sheetId(title);
+    if (sid === undefined) continue;
+    const rows = SPEC[title].filterRows ?? 200;
+    requests.push({
+      addBanding: {
+        bandedRange: {
+          range: { sheetId: sid, startRowIndex: 1, endRowIndex: rows + 1, startColumnIndex: 0, endColumnIndex: HEADERS[TAB_KEY[title]].length },
+          rowProperties: { headerColor: C.ink, firstBandColor: C.band2, secondBandColor: C.band1 },
+        },
+      },
+    });
+  }
+
+  // Priority = the order rules are added (first added wins), so the most
+  // important highlight goes first.
+  const cfCount = new Map<string, number>();
+  const cf = (
+    title: string,
+    formula: string,
+    format: Record<string, unknown>,
+    colSpan: number,
+  ) => {
+    const sid = sheetId(title);
+    if (sid === undefined) return;
+    const index = cfCount.get(title) ?? 0;
+    cfCount.set(title, index + 1);
+    requests.push({
+      addConditionalFormatRule: {
+        rule: {
+          ranges: [{ sheetId: sid, startRowIndex: 1, endRowIndex: 4000, startColumnIndex: 0, endColumnIndex: colSpan }],
+          booleanRule: { condition: { type: "CUSTOM_FORMULA", values: [{ userEnteredValue: formula }] }, format },
+        },
+        index,
+      },
+    });
+  };
+
+  const tint = (bg: RGB, bold = false) => ({
+    backgroundColor: bg,
+    textFormat: { bold, foregroundColor: C.ink },
+  });
+
+  // Results: medal colours by placement, and drafts visually distinct.
+  // (No "published" tint — every published row would mask the medal colours.)
+  cf("Results", `=$C2=1`, tint(C.gold, true), 7);
+  cf("Results", `=$C2=2`, tint(C.silver, true), 7);
+  cf("Results", `=$C2=3`, tint(C.bronze, true), 7);
+  cf("Results", `=LOWER($E2)="draft"`, { textFormat: { italic: true, foregroundColor: C.muted } }, 7);
+
+  // Events: a row flagged for review is the loudest signal, then live, then locked.
+  cf("Events", `=UPPER($M2)="TRUE"`, tint(C.amber, true), 14);
+  cf("Events", `=LOWER($K2)="live"`, { textFormat: { bold: true, foregroundColor: C.blood } }, 14);
+  cf("Events", `=UPPER($L2)="TRUE"`, { backgroundColor: { red: 0.93, green: 0.93, blue: 0.93 }, textFormat: { foregroundColor: C.muted } }, 14);
+
+  // JudgeScores: a score outside 0-100 is a typo
+  cf("JudgeScores", `=AND($E2<>"",OR($E2<0,$E2>100))`, tint({ red: 1, green: 0.85, blue: 0.85 }, true), 5);
+
+  // Criteria: a zero/blank weight would break a judged event
+  cf("Criteria", `=AND($C2<>"",$C2<=0)`, tint({ red: 1, green: 0.85, blue: 0.85 }, true), 4);
+
+  // Users: switched-off accounts
+  cf("Users", `=UPPER($E2)="FALSE"`, { textFormat: { foregroundColor: C.muted, italic: true } }, 5);
+
+  // Matches: live fixtures pop
+  cf("Matches", `=LOWER($J2)="live"`, { textFormat: { bold: true, foregroundColor: C.blood } }, 10);
+
+  if (dashboardId !== undefined) {
+    // Only banner/section rows are merged — merging the summary or table header
+    // rows would collapse their individual columns into one cell.
+    for (const r of [1, 2, 3, 23, 38]) {
+      requests.push({
+        mergeCells: {
+          range: { sheetId: dashboardId, startRowIndex: r - 1, endRowIndex: r, startColumnIndex: 0, endColumnIndex: 7 },
+          mergeType: "MERGE_ALL",
+        },
+      });
+    }
+    // hide the formula helpers
+    requests.push({
+      updateDimensionProperties: {
+        range: { sheetId: dashboardId, dimension: "COLUMNS", startIndex: 19, endIndex: 25 },
+        properties: { hiddenByUser: true },
+        fields: "hiddenByUser",
+      },
+    });
+  }
+  if (guideId !== undefined) {
+    for (const r of [0, 1, 3, 10, 25, 32]) {
+      requests.push({
+        mergeCells: {
+          range: { sheetId: guideId, startRowIndex: r, endRowIndex: r + 1, startColumnIndex: 0, endColumnIndex: 3 },
+          mergeType: "MERGE_ALL",
+        },
+      });
+    }
+  }
+
+  /* ---------------------------------------------------------------- *
+   * 4. Dashboard + Guide values
+   * ---------------------------------------------------------------- */
+  const teamsRaw = (await client.batchGet([`${TABS.teams}!A1:Z`]))[TABS.teams] ?? [];
+  const teams = teamsRaw
+    .slice(1)
+    .filter((r) => (r[0] ?? "").trim() !== "")
+    .map((r) => ({ id: (r[0] ?? "").trim(), name: (r[2] ?? r[1] ?? "").trim(), full: (r[1] ?? "").trim() }));
+
+  const grid: (string | number)[][] = Array.from({ length: 46 }, () => Array.from({ length: 26 }, () => ""));
+  const put = (row: number, col: number, v: string | number) => {
+    grid[row - 1][col] = v;
+  };
+
+  put(1, 0, "SIGLAKAS 2026 — GRAND LINE TALLY");
+  put(2, 0, "Live overall championship. Every number below is calculated from the Results and Events tabs.");
+  put(3, 0, "This tab is generated — do not type into it. To change a score, edit the Results tab (or use the website).");
+
+  put(5, 0, "Crews");
+  put(5, 1, "Events");
+  put(5, 2, "Medals at stake");
+  put(5, 3, "Published results");
+  put(5, 4, "Draft results");
+  put(5, 5, "Live matches");
+  put(5, 6, "Flagged for review");
+  put(6, 0, `=COUNTA(Teams!$A$2:$A$100)`);
+  put(6, 1, `=COUNTA(Events!$A$2:$A$500)`);
+  put(6, 2, `=SUM(Events!$F$2:$F$500)`);
+  put(6, 3, `=COUNTIF(Results!$E$2:$E$2000,"published")`);
+  put(6, 4, `=COUNTIF(Results!$E$2:$E$2000,"draft")`);
+  put(6, 5, `=COUNTIF(Matches!$J$2:$J$500,"live")`);
+  put(6, 6, `=COUNTIF(Events!$M$2:$M$500,"TRUE")`);
+
+  put(8, 0, "Rank");
+  put(8, 1, "Crew");
+  put(8, 2, "Gold");
+  put(8, 3, "Silver");
+  put(8, 4, "Bronze");
+  put(8, 5, "Total");
+
+  // rank column (static 1..n) sits beside the spilled, sorted table
+  teams.forEach((_, i) => put(9 + i, 0, i + 1));
+  put(9, 1, "=SORT({U9:U20,V9:V20,W9:W20,X9:X20,Y9:Y20},2,FALSE,3,FALSE,4,FALSE)");
+
+  // helpers (hidden at T:Y)
+  put(8, 19, "helper: crew id");
+  put(8, 20, "helper: label");
+  put(8, 21, "helper: gold");
+  put(8, 22, "helper: silver");
+  put(8, 23, "helper: bronze");
+  put(8, 24, "helper: total");
+  teams.forEach((t, i) => {
+    const row = 9 + i;
+    put(row, 19, t.id);
+    put(row, 20, t.name || t.full || t.id);
+    put(row, 21, medals(`$T${row}`, `(${RES_PLACE}=1)`));
+    put(row, 22, medals(`$T${row}`, `(${RES_PLACE}=2)`));
+    put(row, 23, medals(`$T${row}`, `(${RES_PLACE}=3)`));
+    put(row, 24, medals(`$T${row}`, `(${RES_PLACE}>=1)*(${RES_PLACE}<=3)`));
+  });
+
+  put(23, 0, "Medals at stake by category");
+  put(24, 0, "Category");
+  put(24, 1, "Events");
+  put(24, 2, "Medals");
+  CATEGORIES.forEach((cat, i) => {
+    const row = 25 + i;
+    put(row, 0, cat);
+    put(row, 1, `=COUNTIF(${EV_CAT},$A${row})`);
+    put(row, 2, `=SUMIF(${EV_CAT},$A${row},${EV_WEIGHT})`);
+  });
+  put(25 + CATEGORIES.length, 0, "TOTAL");
+  put(25 + CATEGORIES.length, 1, `=SUM($B$25:$B$${24 + CATEGORIES.length})`);
+  put(25 + CATEGORIES.length, 2, `=SUM($C$25:$C$${24 + CATEGORIES.length})`);
+
+  put(38, 0, "Sports vs Socio-cultural");
+  put(39, 0, "Division");
+  put(39, 1, "Events");
+  put(39, 2, "Medals");
+  put(40, 0, "sports");
+  put(40, 1, `=COUNTIF(${EV_DIV},$A40)`);
+  put(40, 2, `=SUMIF(${EV_DIV},$A40,${EV_WEIGHT})`);
+  put(41, 0, "cultural");
+  put(41, 1, `=COUNTIF(${EV_DIV},$A41)`);
+  put(41, 2, `=SUMIF(${EV_DIV},$A41,${EV_WEIGHT})`);
+
+  /* ---------------------------------------------------------------- *
+   * 5. Guide
+   * ---------------------------------------------------------------- */
+  const guide: (string | number)[][] = Array.from({ length: 40 }, () => Array.from({ length: 3 }, () => ""));
+  const g = (row: number, col: number, v: string | number) => {
+    guide[row - 1][col] = v;
+  };
+  g(1, 0, "SIGLAKAS 2026 — GRAND LINE TALLY");
+  g(2, 0, "How this spreadsheet is arranged, and who edits what.");
+  g(4, 0, "THE FIVE RULES THAT KEEP THE WEBSITE WORKING");
+  const rules = [
+    "1. Only edit the tabs marked \"you\" in the table below. The website writes Results, Matches, JudgeScores, Announcements and AuditLog itself — anything typed there can be overwritten on the next save.",
+    "2. Never rename a tab, and never rename or reorder a header row. The website finds its data by the exact column names in row 1.",
+    "3. Add new rows at the bottom. Do not delete or sort rows in the middle of a tab while the site is running.",
+    "4. \"medal_weight\" is how many medals that event is worth. 1st place earns that many golds, 2nd that many silvers, 3rd that many bronzes.",
+    "5. The overall champion is the crew with the most GOLD medals; ties are broken by silvers, then bronzes. This is the rule in both SIGLAKAS manuals.",
+  ];
+  rules.forEach((r, i) => g(5 + i, 0, r));
+
+  g(11, 0, "WHO EDITS WHAT");
+  g(12, 0, "Tab");
+  g(12, 1, "Who edits it");
+  g(12, 2, "What it is");
+  const tabDocs: Array<[string, string, string]> = [
+    ["Dashboard", "nobody — generated", "Live overall medal table and summaries, calculated from Results and Events."],
+    ["Guide", "nobody — this page", "The page you are reading."],
+    ["Config", "you (Secretariat)", "Competition name, championship rule, medal points, terminology."],
+    ["Teams", "you (Secretariat)", "The 12 crews: name, short name, group (faculty or extension campus), colours, mascot."],
+    ["Events", "you (Secretariat)", "All 97 events with division, category, how they are scored, and their medal weight."],
+    ["Criteria", "you (Secretariat)", "The judging criteria and weights for every judged event. Weights must total 100."],
+    ["Matches", "PIO via the website", "Fixtures and scores for team sports and e-sports. A completed Final decides 1st and 2nd; a Bronze Medal Match decides 3rd."],
+    ["JudgeScores", "PIO via the website", "One row per judge, per criterion, per crew. Large — do not hand-edit."],
+    ["Results", "PIO via the website", "Placements. This is the tab that actually awards medals. Draft rows are invisible to the public."],
+    ["Announcements", "PIO via the website", "The ticker messages shown on the site and the TV display."],
+    ["AuditLog", "nobody — automatic", "Every change ever made, with who and when. Append-only evidence for protests."],
+    ["Users", "you (Secretariat)", "Login accounts. Passwords are stored hashed — use `npm run create-admin` instead of typing here."],
+  ];
+  tabDocs.forEach((row, i) => {
+    const r = 13 + i;
+    g(r, 0, row[0]);
+    g(r, 1, row[1]);
+    g(r, 2, row[2]);
+  });
+
+  g(26, 0, "HOW A CREW WINS");
+  const win = [
+    "Every published placement earns medals equal to that event's medal_weight: 1st = gold, 2nd = silver, 3rd = bronze. 4th place and below earn nothing.",
+    "Sports (324 medals across 53 events) and socio-cultural (164 medals across 44 events) both count towards one Overall Championship, so 488 medals are at stake in total.",
+    "Judged events are scored by their criteria; match events are decided by the bracket; the rest are decided by the placement you enter.",
+    "Drafts let the PIO check a result before the public sees it. Nothing counts until it is Published.",
+  ];
+  win.forEach((w, i) => g(27 + i, 0, w));
+
+  g(33, 0, "BEFORE COMPETITION DAY");
+  const checklist = [
+    "Run  npm run check-sheet  — it verifies every tab, header, event id and criterion weight.",
+    "Confirm the one event still flagged \"verify\" (Live Band Competition) with OSCAL: the printed line says 5 but its own sub-total of 43 only adds up with 9.",
+    "Check the Config tab: championship rule, competition name, and whether point freeze / reveal mode should be off.",
+    "Create one login per PIO, and a separate Secretariat account. Do not share accounts — the audit log names the account, not the person.",
+    "Do a dress rehearsal: enter a result, publish it, watch the Dashboard and the website update.",
+  ];
+  checklist.forEach((c, i) => g(34 + i, 0, c));
+
+  console.log(`  dashboard   : 12 crews, ${teams.length} helper rows, ${CATEGORIES.length} categories`);
+  console.log(`  requests    : ${requests.length} formatting operations`);
+  const hiddenTabs = SHOW_ALL ? [] : ORDER.filter((t) => !KEEP_VISIBLE.includes(t));
+  console.log(`  visible     : ${ORDER.filter((t) => !hiddenTabs.includes(t)).join(", ")}`);
+  console.log(`  hidden      : ${hiddenTabs.length ? hiddenTabs.join(", ") : "(none)"}`);
+  console.log("");
+
+  if (DRY) {
+    console.log("  dry run — nothing written\n");
+    return;
+  }
+
+  await client.clear("Dashboard!A1:Z60");
+  await client.update("Dashboard!A1", grid);
+  await client.clear("Guide!A1:C60");
+  await client.update("Guide!A1", guide);
+  console.log("  wrote       : Dashboard, Guide");
+
+  for (let i = 0; i < requests.length; i += 80) {
+    await client.batchUpdate(requests.slice(i, i + 80));
+  }
+  console.log(`  applied     : ${requests.length} formatting operations`);
+
+  // header text for Dashboard/Guide (the loop above only styled app tabs)
+  const tid = sheetId("Dashboard");
+  const gid = sheetId("Guide");
+  const extra: unknown[] = [];
+  if (tid !== undefined) extra.push(titleFormat(tid, 7, 46));
+  if (gid !== undefined) extra.push(titleFormat(gid, 3, 40));
+  if (extra.length) await client.batchUpdate(extra);
+
+  console.log("");
+  console.log("  done.");
+  console.log("");
+}
+
+/** Bold white title styling for a generated tab's header row. */
+function titleFormat(sheetId: number, cols: number, rows: number): unknown {
+  return {
+    repeatCell: {
+      range: { sheetId, startRowIndex: 0, endRowIndex: rows, startColumnIndex: 0, endColumnIndex: cols },
+      cell: { userEnteredFormat: { verticalAlignment: "MIDDLE", wrapStrategy: "WRAP" } },
+      fields: "userEnteredFormat(verticalAlignment,wrapStrategy)",
+    },
+  };
+}
+
+/** title -> key, to look up HEADERS */
+const TAB_KEY: Record<string, keyof typeof TABS> = Object.fromEntries(
+  (Object.entries(TABS) as Array<[keyof typeof TABS, string]>).map(([k, v]) => [v, k]),
+);
+
+main().catch((e) => {
+  console.error("\n  x beautify failed:", e instanceof Error ? e.message : e, "\n");
+  process.exit(1);
+});

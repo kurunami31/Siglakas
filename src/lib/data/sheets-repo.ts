@@ -1,0 +1,417 @@
+import type {
+  Criterion,
+  EventItem,
+  JudgeScore,
+  Match,
+  RawSheets,
+  Result,
+  ResultStatus,
+  Team,
+  TeamUser,
+  Announcement,
+  Config,
+  Gender,
+} from "../types";
+import { DEFAULT_PLACEMENT_TABLE } from "../scoring/placement";
+import type { Command, Repository } from "./repo";
+import { auditPayload } from "./audit-payload";
+import { SheetsClient, parseAoa, type ServiceAccountCredentials } from "./google";
+
+export const TABS = {
+  config: "Config",
+  teams: "Teams",
+  events: "Events",
+  criteria: "Criteria",
+  matches: "Matches",
+  judgeScores: "JudgeScores",
+  results: "Results",
+  announcements: "Announcements",
+  auditLog: "AuditLog",
+  users: "Users",
+} as const;
+
+export const HEADERS: Record<keyof typeof TABS, string[]> = {
+  config: ["key", "value"],
+  teams: ["id", "name", "short_name", "group", "color", "logo_file", "mascot", "motto", "logo_url"],
+  events: [
+    "id", "name", "division", "category", "scoring_type", "medal_weight", "gender",
+    "multiplier", "schedule", "venue", "status", "locked", "verify", "note",
+  ],
+  criteria: ["event_id", "criterion", "weight", "order"],
+  matches: ["id", "event_id", "round", "team_a", "team_b", "score_a", "score_b", "detail", "winner", "status"],
+  judgeScores: ["event_id", "team_id", "judge", "criterion", "score"],
+  results: ["event_id", "team_id", "placement", "tie", "status", "entered_by", "timestamp"],
+  announcements: ["timestamp", "message", "posted_by"],
+  auditLog: ["timestamp", "actor", "action", "entity", "entity_id", "field", "old_value", "new_value"],
+  users: ["username", "password_hash", "role", "team_id", "active"],
+};
+
+const num = (v: string, fallback = 0) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fallback;
+};
+const bool = (v: string) => ["true", "1", "yes", "y", "x"].includes(v.toLowerCase());
+
+export class SheetsRepository implements Repository {
+  readonly kind = "sheets" as const;
+  private client: SheetsClient;
+
+  constructor(
+    spreadsheetId: string,
+    creds: ServiceAccountCredentials,
+    private readonly configDefaults: Config,
+  ) {
+    this.client = new SheetsClient(spreadsheetId, creds);
+  }
+
+  async read(): Promise<RawSheets> {
+    // Unbounded row range: Results reaches ~1,160 rows and JudgeScores ~6,000
+    // over a full festival, so a fixed cap here would silently drop data.
+    const ranges = Object.values(TABS).map((t) => `${t}!A1:Z`);
+    const data = await this.client.batchGet(ranges);
+    const table = (name: string) => parseAoa(data[name] ?? []).rows;
+
+    const configRows = table(TABS.config);
+    const config: Record<string, string> = {};
+    for (const r of configRows) config[r.key] = r.value;
+
+    const teams: Team[] = table(TABS.teams).map((r) => ({
+      id: r.id,
+      name: r.name,
+      shortName: r.short_name || r.id.toUpperCase(),
+      group: r.group === "extension_campus" ? "extension_campus" : "faculty",
+      color: r.color || "#1f6f8b",
+      logoFile: r.logo_file || r.id,
+      mascot: r.mascot || "",
+      motto: r.motto || undefined,
+      logoUrl: r.logo_url || undefined,
+    }));
+
+    const events: EventItem[] = table(TABS.events).map((r) => ({
+      id: r.id,
+      name: r.name,
+      division: r.division === "cultural" ? "cultural" : "sports",
+      category: r.category || "Uncategorised",
+      scoringType:
+        r.scoring_type === "judged" ? "judged" : r.scoring_type === "match" ? "match" : "placement",
+      medalWeight: num(r.medal_weight),
+      gender: (r.gender as Gender) || "Open",
+      multiplier: num(r.multiplier, 1) || 1,
+      schedule: r.schedule || undefined,
+      venue: r.venue || undefined,
+      status: r.status === "live" ? "live" : r.status === "finished" ? "finished" : "upcoming",
+      locked: bool(r.locked),
+      verify: bool(r.verify),
+      note: r.note || undefined,
+    }));
+
+    const criteria: Criterion[] = table(TABS.criteria).map((r) => ({
+      eventId: r.event_id,
+      criterion: r.criterion,
+      weight: num(r.weight),
+      order: num(r.order),
+    }));
+
+    const matches: Match[] = table(TABS.matches).map((r) => ({
+      id: r.id,
+      eventId: r.event_id,
+      round: r.round,
+      teamA: r.team_a,
+      teamB: r.team_b,
+      scoreA: num(r.score_a),
+      scoreB: num(r.score_b),
+      detail: r.detail || undefined,
+      winner: r.winner || "",
+      status: r.status === "live" ? "live" : r.status === "final" ? "final" : "scheduled",
+    }));
+
+    const judgeScores: JudgeScore[] = table(TABS.judgeScores).map((r) => ({
+      eventId: r.event_id,
+      teamId: r.team_id,
+      judge: r.judge,
+      criterion: r.criterion,
+      score: num(r.score),
+    }));
+
+    const results: Result[] = table(TABS.results).map((r) => ({
+      eventId: r.event_id,
+      teamId: r.team_id,
+      placement: num(r.placement),
+      tie: bool(r.tie),
+      // Match the Dashboard, which tests LOWER(status)="published". Without the
+      // lower-casing a hand-typed "Published" would show medals on the sheet but
+      // silently score nothing on the site.
+      status: r.status.toLowerCase() === "published" ? "published" : "draft",
+      enteredBy: r.entered_by,
+      timestamp: r.timestamp,
+    }));
+
+    const announcements: Announcement[] = table(TABS.announcements).map((r) => ({
+      timestamp: r.timestamp,
+      message: r.message,
+      postedBy: r.posted_by,
+    }));
+
+    const auditLog = table(TABS.auditLog).map((r) => ({
+      timestamp: r.timestamp,
+      actor: r.actor,
+      action: r.action,
+      entity: r.entity,
+      entityId: r.entity_id,
+      field: r.field || undefined,
+      oldValue: r.old_value || undefined,
+      newValue: r.new_value || undefined,
+    }));
+
+    const users: TeamUser[] = table(TABS.users).map((r) => ({
+      username: r.username,
+      passwordHash: r.password_hash,
+      role: r.role === "secretariat" ? "secretariat" : r.role === "superadmin" ? "superadmin" : "pio",
+      teamId: r.team_id || "",
+      active: r.active === "" ? true : bool(r.active),
+    }));
+
+    return {
+      config: { ...this.configDefaults, ...configToConfig(config) } as RawSheets["config"],
+      teams,
+      events,
+      criteria,
+      matches,
+      judgeScores,
+      results,
+      announcements,
+      auditLog,
+      users,
+    };
+  }
+
+  private async writeTable(tab: string, headers: string[], rows: Array<Array<string | number>>) {
+    // `values.update` only overwrites the cells it is given, so a table that
+    // shrinks (a deleted result, team or fixture) would leave the old trailing
+    // rows behind as orphans. Clear the tab first, then write.
+    await this.client.clear(`${tab}!A1:Z`);
+    await this.client.update(`${tab}!A1`, [headers, ...rows]);
+  }
+
+  async apply(command: Command): Promise<RawSheets> {
+    const raw = await this.read();
+    switch (command.type) {
+      case "saveResults":
+      case "publishResults":
+      case "unpublishResults":
+      case "deleteResult": {
+        const results = raw.results.filter((r) => r.eventId !== command.eventId);
+        if (command.type === "saveResults") {
+          for (const row of command.rows) {
+            results.push({
+              eventId: command.eventId,
+              teamId: row.teamId,
+              placement: row.placement,
+              tie: row.tie,
+              status: row.status,
+              enteredBy: command.actor,
+              timestamp: new Date().toISOString(),
+            });
+          }
+        } else if (command.type !== "deleteResult") {
+          const status = command.type === "publishResults" ? "published" : "draft";
+          for (const r of raw.results.filter((x) => x.eventId === command.eventId)) {
+            results.push({ ...r, status: status as ResultStatus });
+          }
+        } else {
+          for (const r of raw.results.filter(
+            (x) => x.eventId === command.eventId && x.teamId !== command.teamId,
+          )) {
+            results.push(r);
+          }
+        }
+        await this.writeTable(TABS.results, HEADERS.results, results.map(resultRow));
+        raw.results = results;
+        break;
+      }
+      case "saveJudgeScores": {
+        const keep = raw.judgeScores.filter((j) => j.eventId !== command.eventId);
+        const judgeScores = [...keep, ...command.rows];
+        await this.writeTable(
+          TABS.judgeScores,
+          HEADERS.judgeScores,
+          judgeScores.map((j) => [j.eventId, j.teamId, j.judge, j.criterion, j.score]),
+        );
+        raw.judgeScores = judgeScores;
+        break;
+      }
+      case "saveMatch":
+      case "deleteMatch": {
+        const matches = raw.matches.filter((m) =>
+          command.type === "deleteMatch" ? m.id !== command.id : m.id !== command.match.id,
+        );
+        if (command.type === "saveMatch") matches.push(command.match);
+        await this.writeTable(TABS.matches, HEADERS.matches, matches.map(matchRow));
+        raw.matches = matches;
+        break;
+      }
+      case "announce": {
+        const timestamp = new Date().toISOString();
+        await this.client.append(`${TABS.announcements}!A1`, [[timestamp, command.message, command.actor]]);
+        raw.announcements = [
+          ...raw.announcements,
+          { timestamp, message: command.message, postedBy: command.actor },
+        ];
+        break;
+      }
+      case "updateConfig": {
+        const merged = { ...raw.config, ...command.patch };
+        await this.writeTable(TABS.config, HEADERS.config, configRows(merged as Config));
+        raw.config = merged as RawSheets["config"];
+        break;
+      }
+      case "updateEvent": {
+        const events = raw.events.map((e) => (e.id === command.id ? { ...e, ...command.patch } : e));
+        await this.writeTable(TABS.events, HEADERS.events, events.map(eventRow));
+        raw.events = events;
+        break;
+      }
+      case "upsertTeam": {
+        const teams = raw.teams.filter((t) => t.id !== command.team.id);
+        teams.push(command.team);
+        await this.writeTable(TABS.teams, HEADERS.teams, teams.map(teamRow));
+        raw.teams = teams;
+        break;
+      }
+      case "deleteTeam": {
+        const teams = raw.teams.filter((t) => t.id !== command.id);
+        await this.writeTable(TABS.teams, HEADERS.teams, teams.map(teamRow));
+        raw.teams = teams;
+        break;
+      }
+      case "saveCriteria": {
+        const keep = raw.criteria.filter((c) => c.eventId !== command.eventId);
+        const criteria = [...keep, ...command.rows];
+        await this.writeTable(
+          TABS.criteria,
+          HEADERS.criteria,
+          criteria.map((c) => [c.eventId, c.criterion, c.weight, c.order]),
+        );
+        raw.criteria = criteria;
+        break;
+      }
+      case "upsertUser": {
+        const target = command.user.username.toLowerCase();
+        const existing = raw.users.find((u) => u.username.toLowerCase() === target);
+        const users = raw.users.filter((u) => u.username.toLowerCase() !== target);
+        users.push({
+          username: command.user.username,
+          // No new hash means "keep the current password" (role/team/active edit).
+          passwordHash: command.user.passwordHash ?? existing?.passwordHash ?? "",
+          role: command.user.role,
+          teamId: command.user.teamId,
+          active: command.user.active,
+        });
+        await this.writeTable(TABS.users, HEADERS.users, users.map(userRow));
+        raw.users = users;
+        break;
+      }
+      case "deleteUser": {
+        const target = command.username.toLowerCase();
+        const users = raw.users.filter((u) => u.username.toLowerCase() !== target);
+        await this.writeTable(TABS.users, HEADERS.users, users.map(userRow));
+        raw.users = users;
+        break;
+      }
+    }
+    const entry = {
+      timestamp: new Date().toISOString(),
+      actor: command.actor,
+      action: command.type,
+      entity: "command",
+      entityId: "",
+      field: undefined,
+      oldValue: undefined,
+      newValue: auditPayload(command),
+    };
+    await this.client.append(`${TABS.auditLog}!A1`, [
+      [
+        entry.timestamp,
+        entry.actor,
+        entry.action,
+        entry.entity,
+        entry.entityId,
+        "",
+        "",
+        entry.newValue,
+      ],
+    ]);
+    raw.auditLog = [...raw.auditLog, entry];
+    return raw;
+  }
+}
+
+/* --------------------------- row builders --------------------------- */
+
+export const teamRow = (t: Team) => [
+  t.id, t.name, t.shortName, t.group, t.color, t.logoFile, t.mascot, t.motto ?? "", t.logoUrl ?? "",
+];
+export const eventRow = (e: EventItem) => [
+  e.id, e.name, e.division, e.category, e.scoringType, e.medalWeight, e.gender, e.multiplier,
+  e.schedule ?? "", e.venue ?? "", e.status, e.locked ? "TRUE" : "FALSE", e.verify ? "TRUE" : "FALSE", e.note ?? "",
+];
+const matchRow = (m: Match) => [
+  m.id, m.eventId, m.round, m.teamA, m.teamB, m.scoreA, m.scoreB, m.detail ?? "", m.winner, m.status,
+];
+const resultRow = (r: Result) => [
+  r.eventId, r.teamId, r.placement, r.tie ? "TRUE" : "FALSE", r.status, r.enteredBy, r.timestamp,
+];
+const userRow = (u: TeamUser) => [
+  u.username, u.passwordHash, u.role, u.teamId, u.active ? "TRUE" : "FALSE",
+];
+
+export function configRows(c: Config): Array<[string, string | number]> {
+  const rows: Array<[string, string | number]> = [
+    ["competition_name", c.competitionName],
+    ["school_name", c.schoolName],
+    ["subtitle", c.subtitle],
+    ["championship_rank_by", c.championshipRankBy],
+    ["medal_points_gold", c.medalPoints.gold],
+    ["medal_points_silver", c.medalPoints.silver],
+    ["medal_points_bronze", c.medalPoints.bronze],
+    ["terminology", c.terminology],
+    ["points_freeze", c.pointsFreeze ? "TRUE" : "FALSE"],
+    ["reveal_mode", c.revealMode ? "TRUE" : "FALSE"],
+  ];
+  // Emit every placement the table defines rather than only the default 1–4,
+  // so a save from the admin UI can never silently drop deeper placements.
+  const places = c.defaultPlacementTable.places;
+  const keys = Object.keys(places)
+    .map(Number)
+    .filter((n) => Number.isFinite(n))
+    .sort((a, b) => a - b);
+  for (const place of keys) rows.push([`placement_${place}`, places[place]]);
+  rows.push(["participation", c.defaultPlacementTable.participation]);
+  return rows;
+}
+
+function configToConfig(kv: Record<string, string>): Partial<Config> {
+  const places: Record<number, number> = {};
+  for (let i = 1; i <= 12; i++) {
+    if (kv[`placement_${i}`] !== undefined && kv[`placement_${i}`] !== "") places[i] = num(kv[`placement_${i}`]);
+  }
+  return {
+    competitionName: kv.competition_name || undefined,
+    schoolName: kv.school_name || undefined,
+    subtitle: kv.subtitle || undefined,
+    championshipRankBy: (kv.championship_rank_by as Config["championshipRankBy"]) || undefined,
+    terminology: (kv.terminology as Config["terminology"]) || undefined,
+    pointsFreeze: kv.points_freeze !== undefined ? bool(kv.points_freeze) : undefined,
+    revealMode: kv.reveal_mode !== undefined ? bool(kv.reveal_mode) : undefined,
+    medalPoints: {
+      gold: num(kv.medal_points_gold, 3),
+      silver: num(kv.medal_points_silver, 2),
+      bronze: num(kv.medal_points_bronze, 1),
+    },
+    defaultPlacementTable: {
+      ...DEFAULT_PLACEMENT_TABLE,
+      places: Object.keys(places).length ? places : DEFAULT_PLACEMENT_TABLE.places,
+      participation: num(kv.participation, 1),
+    },
+  };
+}

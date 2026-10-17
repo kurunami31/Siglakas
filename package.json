@@ -1,0 +1,41 @@
+{
+  "name": "dorsu-grand-line-tally",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "optimize-logos": "tsx scripts/optimize-logos.ts",
+    "setup-sheet": "tsx scripts/setup-sheet.ts",
+    "check-sheet": "tsx scripts/check-sheet.ts",
+    "beautify-sheet": "tsx scripts/beautify-sheet.ts",
+    "service-account-json": "tsx scripts/service-account-json.ts",
+    "create-admin": "tsx scripts/create-admin.ts",
+    "rehearse": "tsx scripts/rehearse.ts"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "jose": "^6.2.12",
+    "motion": "^14.3.0",
+    "next": "16.4.2",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@tailwindcss/turbopack": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "sharp": "^0.35.5",
+    "tailwindcss": "^4",
+    "tsx": "^4.23.15",
+    "typescript": "^5",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.5"
+  }
+}

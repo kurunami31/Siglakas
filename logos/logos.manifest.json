@@ -1,0 +1,98 @@
+{
+  "fted": {
+    "dominant": "#2889d9",
+    "accent": "#38B2FF",
+    "width": 2970,
+    "height": 2970,
+    "source": "FTED.jpg",
+    "mascot": "Blue Phoenix"
+  },
+  "facet": {
+    "dominant": "#c35712",
+    "accent": "#E8681A",
+    "width": 2970,
+    "height": 2970,
+    "source": "FACET icon.jpg",
+    "mascot": "Orange Stallion"
+  },
+  "fahuscic": {
+    "dominant": "#1faec5",
+    "accent": "#22C5E3",
+    "width": 2970,
+    "height": 2970,
+    "source": "FAHUSCIC.jpg",
+    "mascot": "Shark"
+  },
+  "fals": {
+    "dominant": "#81b574",
+    "accent": "#6FBF5C",
+    "width": 2970,
+    "height": 2970,
+    "source": "FALS.jpg",
+    "mascot": "Green Serpent"
+  },
+  "fbm": {
+    "dominant": "#e4c417",
+    "accent": "#FAD607",
+    "width": 2970,
+    "height": 2970,
+    "source": "FBM.jpg",
+    "mascot": "Yellow Eagle"
+  },
+  "fcje": {
+    "dominant": "#ce2a28",
+    "accent": "#E02626",
+    "width": 2970,
+    "height": 2970,
+    "source": "FCJE.jpg",
+    "mascot": "Red Eagle"
+  },
+  "fnahs": {
+    "dominant": "#d0a12c",
+    "accent": "#D9A62B",
+    "width": 2970,
+    "height": 2970,
+    "source": "FNAHS.jpg",
+    "mascot": "Golden Pegasus"
+  },
+  "siec": {
+    "dominant": "#d9c76c",
+    "accent": "#E8D24A",
+    "width": 2970,
+    "height": 2970,
+    "source": "SIEC.jpg",
+    "mascot": "Hornet"
+  },
+  "tec": {
+    "dominant": "#9d9c9a",
+    "accent": "#9A9994",
+    "width": 2970,
+    "height": 2970,
+    "source": "TEC.jpg",
+    "mascot": "Howling Wolf"
+  },
+  "bec": {
+    "dominant": "#790e08",
+    "accent": "#8B0A0A",
+    "width": 2970,
+    "height": 2970,
+    "source": "BEC.jpg",
+    "mascot": "Bull"
+  },
+  "bgec": {
+    "dominant": "#519882",
+    "accent": "#3FA68A",
+    "width": 2970,
+    "height": 2970,
+    "source": "BGEC.jpg",
+    "mascot": "Sea Dragon"
+  },
+  "cec": {
+    "dominant": "#5c5e86",
+    "accent": "#5B5FA8",
+    "width": 2970,
+    "height": 2970,
+    "source": "CEC.jpg",
+    "mascot": "Kraken"
+  }
+}
