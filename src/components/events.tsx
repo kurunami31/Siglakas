@@ -10,6 +10,7 @@ import { computeRoundRobin } from "@/lib/scoring/match";
 import { useLive } from "./providers";
 import { TeamBadge } from "./team-badge";
 import { PrintButton } from "./print-button";
+import { Select } from "./select";
 import { Icon, MedalIcon } from "./icons";
 
 type StatusFilter = "all" | "upcoming" | "live" | "finished";
@@ -68,36 +69,36 @@ export function EventExplorer() {
           </h2>
           <PrintButton label="Print the list" />
         </div>
-        <div className="flex flex-wrap gap-2">
-          <ChipGroup
+        <div className="grid gap-2 sm:grid-cols-3">
+          <Select
             label="Sea"
-            options={[
-              { id: "all", label: "All islands" },
-              { id: "sports", label: t.sports },
-              { id: "cultural", label: t.cultural },
-            ]}
             value={division}
             onChange={(v) => {
               setDivision(v as Division | "all");
               setCategory("all");
             }}
-          />
-          <ChipGroup
-            label="Status"
             options={[
-              { id: "all", label: "All" },
-              { id: "upcoming", label: "Upcoming" },
-              { id: "live", label: "Live" },
-              { id: "finished", label: "Finished" },
+              { value: "all" as const, label: "All islands" },
+              { value: "sports" as const, label: t.sports },
+              { value: "cultural" as const, label: t.cultural },
             ]}
+          />
+          <Select
+            label="Status"
             value={status}
             onChange={(v) => setStatus(v as StatusFilter)}
+            options={[
+              { value: "all" as const, label: "All statuses" },
+              { value: "upcoming" as const, label: "Upcoming" },
+              { value: "live" as const, label: "Live" },
+              { value: "finished" as const, label: "Finished" },
+            ]}
           />
-          <ChipGroup
+          <Select
             label="Category"
-            options={categories.map((c) => ({ id: c, label: c === "all" ? "All categories" : c }))}
             value={category}
             onChange={setCategory}
+            options={categories.map((c) => ({ value: c, label: c === "all" ? "All categories" : c }))}
           />
         </div>
       </div>

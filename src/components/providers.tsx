@@ -10,7 +10,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { CompetitionState } from "@/lib/types";
+import type { CompetitionState, Role } from "@/lib/types";
 import { Icon } from "./icons";
 
 export interface Toast {
@@ -23,6 +23,8 @@ export interface Toast {
 
 interface LiveContextValue {
   state: CompetitionState;
+  /** Signed-in staff role, or null for a public viewer. */
+  role: Role | null;
   connected: boolean;
   degraded: boolean;
   transport: "sse" | "polling";
@@ -33,9 +35,11 @@ const LiveContext = createContext<LiveContextValue | null>(null);
 
 export function LiveProvider({
   initial,
+  role = null,
   children,
 }: {
   initial: CompetitionState;
+  role?: Role | null;
   children: ReactNode;
 }) {
   const [state, setState] = useState<CompetitionState>(initial);
@@ -171,8 +175,8 @@ export function LiveProvider({
   }, []);
 
   const value = useMemo<LiveContextValue>(
-    () => ({ state, connected, degraded, transport, pushToast }),
-    [state, connected, degraded, transport, pushToast],
+    () => ({ state, role, connected, degraded, transport, pushToast }),
+    [state, role, connected, degraded, transport, pushToast],
   );
 
   return (

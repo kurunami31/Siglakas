@@ -44,7 +44,7 @@ function LoginForm() {
           <Icon name="anchor" size={26} className="text-straw" /> Crew sign-in
         </p>
         <p className="mt-1 text-sm text-foam/75">
-          For the Public Information Office and Secretariat only. Viewers never need an account.
+          For the Public Information Office, Secretariat and Super Admin only. Viewers never need an account.
         </p>
 
         <form onSubmit={submit} className="mt-5 space-y-3" aria-describedby={error ? "login-error" : undefined}>
@@ -88,12 +88,6 @@ function LoginForm() {
             {busy ? "Boarding…" : "Sign in"}
           </button>
         </form>
-
-        <p className="mt-4 rounded-lg border border-foam/15 bg-ink/40 p-3 text-xs text-foam/70">
-          <strong className="text-parchment">Demo mode:</strong> sign in with{" "}
-          <code>superadmin / grandline-superadmin</code>, <code>secretariat / grandline-secretariat</code>{" "}
-          or <code>pio / grandline-pio</code>. Only the Super Admin can create accounts.
-        </p>
       </div>
     </div>
   );

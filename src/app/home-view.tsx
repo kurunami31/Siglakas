@@ -74,12 +74,12 @@ export function HomeView() {
 
 function StatCard({ label, value, icon }: { label: string; value: number; icon: IconName }) {
   return (
-    <div className="panel rounded-2xl p-4">
-      <p className="flex items-center gap-1.5 text-[0.68rem] uppercase tracking-widest text-foam/70">
-        <Icon name={icon} size={14} />
+    <div className="panel flex flex-col items-center justify-center gap-0.5 rounded-xl px-3 py-2 text-center">
+      <p className="flex items-center gap-1.5 text-[0.65rem] uppercase tracking-widest text-foam/70">
+        <Icon name={icon} size={13} />
         {label}
       </p>
-      <p className="font-display text-3xl text-straw">{value.toLocaleString()}</p>
+      <p className="font-display text-2xl leading-none text-straw">{value.toLocaleString()}</p>
     </div>
   );
 }

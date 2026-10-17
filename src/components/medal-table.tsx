@@ -106,10 +106,10 @@ export function MedalTally() {
                   className="border-b border-foam/10 last:border-0 hover:bg-foam/5"
                   style={{ boxShadow: `inset 3px 0 0 ${team.color}` }}
                 >
-                  <td className="px-1.5 py-2 sm:px-3">
-                    <span className="font-display text-lg">{row.rank}</span>
-                    <span className="ml-1 hidden sm:inline">
-                      <RankArrow change={division === "overall" ? row.rankChange : 0} />
+                  <td className="px-1 py-2 sm:px-2">
+                    <span className="block text-center font-display text-lg leading-none">{row.rank}</span>
+                    <span className="mt-0.5 block text-center">
+                      <RankArrow change={division === "overall" ? row.rankChange : 0} compact />
                     </span>
                   </td>
                   <th scope="row" className="overflow-hidden px-1.5 py-2 text-left font-normal sm:px-2">

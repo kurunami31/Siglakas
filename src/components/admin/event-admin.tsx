@@ -7,10 +7,11 @@ import { can } from "@/lib/auth/permissions";
 import type { Division, EventItem, EventStatus } from "@/lib/types";
 import { Icon } from "@/components/icons";
 import { useAdmin } from "./admin-shell";
+import { Select } from "@/components/select";
 
 type Patch = Partial<EventItem>;
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 5;
 
 const STATUS_LABEL: Record<EventStatus, string> = {
   upcoming: "Upcoming",
@@ -114,35 +115,30 @@ export function EventAdmin() {
             className="w-full rounded-lg border border-foam/25 bg-ink/60 px-3 py-2.5 text-parchment placeholder:text-foam/40"
           />
         </label>
-        <div role="group" aria-label="Division" className="flex gap-1 rounded-lg border border-foam/15 bg-ink/50 p-1">
-          {(["all", "sports", "cultural"] as const).map((d) => (
-            <button
-              key={d}
-              type="button"
-              aria-pressed={division === d}
-              onClick={() => setDivision(d)}
-              className={`min-h-11 rounded-md px-2.5 text-xs font-semibold transition ${
-                division === d ? "bg-straw text-ink" : "text-parchment/80 hover:bg-foam/10"
-              }`}
-            >
-              {d === "all" ? "All" : d === "sports" ? "Sports" : "Socio-Cultural"}
-            </button>
-          ))}
+        <div role="group" aria-label="Division" className="min-w-[9rem]">
+          <Select
+            label="Division"
+            value={division}
+            onChange={setDivision}
+            options={[
+              { value: "all" as const, label: "All islands" },
+              { value: "sports" as const, label: "Sports" },
+              { value: "cultural" as const, label: "Socio-Cultural" },
+            ]}
+          />
         </div>
-        <div role="group" aria-label="Status" className="flex gap-1 rounded-lg border border-foam/15 bg-ink/50 p-1">
-          {(["all", "upcoming", "live", "finished"] as const).map((s) => (
-            <button
-              key={s}
-              type="button"
-              aria-pressed={status === s}
-              onClick={() => setStatus(s)}
-              className={`min-h-11 rounded-md px-2.5 text-xs font-semibold capitalize transition ${
-                status === s ? "bg-straw text-ink" : "text-parchment/80 hover:bg-foam/10"
-              }`}
-            >
-              {s === "all" ? "Any status" : STATUS_LABEL[s]}
-            </button>
-          ))}
+        <div role="group" aria-label="Status" className="min-w-[9rem]">
+          <Select
+            label="Status"
+            value={status}
+            onChange={setStatus}
+            options={[
+              { value: "all" as const, label: "Any status" },
+              { value: "upcoming" as const, label: "Upcoming" },
+              { value: "live" as const, label: "Live" },
+              { value: "finished" as const, label: "Finished" },
+            ]}
+          />
         </div>
       </div>
 

@@ -6,6 +6,7 @@ import { SiteHeader } from "@/components/site-header";
 import { Ticker } from "@/components/ticker";
 import { Icon } from "@/components/icons";
 import { getViewerState } from "@/lib/server-state";
+import { getSession } from "@/lib/auth/server";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -18,6 +19,14 @@ export const metadata: Metadata = {
   description:
     "Live medal tally and bounty board for the school-wide Socio-Cultural & Sports Festival. Twelve crews, one Grand Line.",
   applicationName: "Grand Line Tally",
+  openGraph: {
+    title: "Grand Line Tally — SIGLAKAS 2026",
+    description:
+      "Live medal tally and bounty board for the DOrSU SIGLAKAS 2026 Socio-Cultural & Sports Festival.",
+    siteName: "Grand Line Tally",
+    images: [{ url: "/brand/siglakas-logo-1024.png", width: 1024, height: 1024, alt: "SIGLAKAS 2026" }],
+    type: "website",
+  },
 };
 
 export const viewport: Viewport = {
@@ -28,6 +37,7 @@ export const viewport: Viewport = {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const state = await getViewerState();
+  const session = await getSession();
 
   return (
     <html lang="en">
@@ -43,7 +53,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <a href="#main" className="sr-only sr-only-focusable print:hidden">
           Skip to content
         </a>
-        <LiveProvider initial={state}>
+        <LiveProvider initial={state} role={session?.role ?? null}>
           <Ocean />
           <SiteHeader />
           <Ticker />

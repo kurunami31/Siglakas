@@ -77,7 +77,13 @@ export function UserAdmin() {
 
       <CreateAccount teams={teams} onDone={done} onError={setError} />
 
-      <div className="space-y-3">
+      <div
+        role="region"
+        aria-label="Accounts (scrollable)"
+        tabIndex={0}
+        data-print-expand
+        className="max-h-[65vh] space-y-3 overflow-y-auto overscroll-contain pr-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-straw"
+      >
         {loading && users.length === 0 && (
           <p className="panel rounded-2xl p-4 text-sm italic text-foam/60">Loading accounts…</p>
         )}

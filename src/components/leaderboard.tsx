@@ -67,6 +67,12 @@ export function Leaderboard({ state, dense = false }: { state: CompetitionState;
                 animate={{ opacity: 1, scale: 1 }}
                 exit={reduce ? undefined : { opacity: 0, scale: 0.94 }}
                 transition={{ type: "spring", stiffness: 320, damping: 30 }}
+                // `min-w-0` matters: a grid item defaults to `min-width: auto`,
+                // so it would refuse to shrink below the min-content width of
+                // the `truncate`d text inside and overflow the 1fr track —
+                // clipped by the card's own `overflow-hidden`, i.e. the right
+                // edge of every card disappears on a phone.
+                className="min-w-0"
               >
                 <WantedPoster
                   team={team}
@@ -215,36 +221,40 @@ export function WantedPoster({
   );
 }
 
-export function RankArrow({ change }: { change: number }) {
-  // Hidden in print: on a pinned-up notice board the movement arrows are noise,
-  // and "no change" overflows the narrow rank column.
-  if (change === 0)
+export function RankArrow({ change, compact = false }: { change: number; compact?: boolean }) {
+  // Hidden in print: movement arrows are noise on a pinned-up notice board.
+  if (change === 0) {
+    // `compact` is for the medal table's narrow rank column, where the words
+    // "no change" cannot fit and made the column look ragged. A centred dash
+    // keeps all twelve rows aligned; the meaning is kept for screen readers.
     return (
       <span
-        className="rank-same inline-flex items-center gap-1 text-xs font-semibold print:hidden"
+        className={`rank-same ${
+          compact ? "text-[0.7rem] font-semibold" : "inline-flex items-center gap-1 text-xs font-semibold"
+        } print:hidden`}
         title="No rank change"
       >
-        <Icon name="minus" size={12} />
-        <span className="sr-only sm:not-sr-only">no change</span>
+        <span aria-hidden>{compact ? "–" : <Icon name="minus" size={12} />}</span>
+        <span className={compact ? "sr-only" : "sr-only sm:not-sr-only"}>no change</span>
       </span>
     );
-  if (change > 0)
-    return (
-      <span
-        className="rank-up inline-flex items-center gap-0.5 text-xs font-bold print:hidden"
-        title={`Up ${change} place${change > 1 ? "s" : ""}`}
-      >
-        <Icon name="arrowUp" size={12} strokeWidth={2.4} />
-        {change}
-      </span>
-    );
+  }
+
+  const up = change > 0;
+  const magnitude = Math.abs(change);
+  const spoken = `${up ? "up" : "down"} ${magnitude} place${magnitude > 1 ? "s" : ""}`;
   return (
     <span
-      className="rank-down inline-flex items-center gap-0.5 text-xs font-bold print:hidden"
-      title={`Down ${Math.abs(change)} place${Math.abs(change) > 1 ? "s" : ""}`}
+      className={`rank-${up ? "up" : "down"} inline-flex items-center justify-center gap-0.5 ${
+        compact ? "text-[0.7rem] font-bold" : "text-xs font-bold"
+      } print:hidden`}
+      title={spoken}
     >
-      <Icon name="arrowDown" size={12} strokeWidth={2.4} />
-      {Math.abs(change)}
+      <span aria-hidden className="inline-flex items-center gap-0.5">
+        <Icon name={up ? "arrowUp" : "arrowDown"} size={compact ? 10 : 12} strokeWidth={2.4} />
+        {magnitude}
+      </span>
+      <span className="sr-only">{spoken}</span>
     </span>
   );
 }

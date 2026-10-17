@@ -41,6 +41,10 @@ siglakas-*.json
 *.key.json
 .secrets/
 
+# Master brand artwork: multi-megabyte, and the site uses the generated
+# copies under /public/brand (see public/brand/README.md).
+/*Logo*.png
+
 # vercel
 .vercel
 
