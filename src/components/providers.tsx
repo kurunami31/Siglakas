@@ -101,11 +101,19 @@ export function LiveProvider({
       poll = setInterval(async () => {
         if (stopped) return;
         try {
+          // Cheap probe first. /api/state carries 12 teams, 97 events and every
+          // result and match, so pulling it on a timer unconditionally wastes
+          // bandwidth and function CPU; /api/version is a tiny hash payload.
+          const probe = await fetch("/api/version", { cache: "no-store" });
+          if (!probe.ok) throw new Error("bad status");
+          const meta = (await probe.json()) as { version?: string };
+          setConnected(true);
+          setDegraded(false);
+          if (meta.version && meta.version === lastVersion.current) return;
+
           const res = await fetch("/api/state", { cache: "no-store" });
           if (!res.ok) throw new Error("bad status");
           const data = await res.json();
-          setConnected(true);
-          setDegraded(false);
           applyState(data.state, true);
         } catch {
           setConnected(false);

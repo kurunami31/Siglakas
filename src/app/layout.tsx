@@ -13,6 +13,10 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export const metadata: Metadata = {
+  // Required for absolute OpenGraph/canonical URLs. Without it Next emits a
+  // RELATIVE og:image, which social scrapers cannot resolve, so link previews
+  // silently show nothing.
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://siglakas.vercel.app"),
   title: {
     default: "Grand Line Tally — Live Championship Scoreboard",
     template: "%s · Grand Line Tally",

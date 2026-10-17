@@ -119,7 +119,28 @@ class StateStore {
     if (changed) this.notify();
   }
 
+  /**
+   * Serialise every write. `Repository.apply` is read-modify-write across whole
+   * tabs, so two commands running concurrently would each read the same
+   * snapshot and the second write would silently drop the first one's rows —
+   * exactly what happens when two PIOs publish at the same moment. Chaining
+   * means each write is based on the previous one's result.
+   *
+   * This closes the window within one server instance, which is where the race
+   * actually bites. Across instances the shared-cache layer is the real fix.
+   */
+  private writeQueue: Promise<unknown> = Promise.resolve();
+
   async applyCommand(command: Command): Promise<CompetitionState> {
+    const run = this.writeQueue.then(
+      () => this.applyNow(command),
+      () => this.applyNow(command), // a rejected write must not poison the chain
+    );
+    this.writeQueue = run.catch(() => {});
+    return run;
+  }
+
+  private async applyNow(command: Command): Promise<CompetitionState> {
     const raw = await this.repo.apply(command);
     if (raw) {
       // The repository handed back the exact post-write snapshot, so adopt it
@@ -158,7 +179,7 @@ class StateStore {
   startLoops(): void {
     if (this.timer || typeof window !== "undefined") return;
     const demo = isDemoMode();
-    const interval = demo ? 8000 : Number(process.env.SHEET_POLL_MS ?? 5000);
+    const interval = demo ? 8000 : Number(process.env.SHEET_POLL_MS ?? 15000);
     this.timer = setInterval(async () => {
       if (demo && this.repo instanceof DemoRepository) {
         const rng = Math.random;
