@@ -162,8 +162,16 @@ export function WantedPoster({
   return (
     <Link
       href={`/teams/${team.id}`}
-      className={`parchment panel-hover relative block overflow-hidden rounded-2xl p-3 ${dense ? "" : "sm:p-4"}`}
+      className={`parchment panel-hover group relative block overflow-hidden rounded-2xl p-3 ${dense ? "" : "sm:p-4"}`}
       style={{ ["--glow" as string]: team.color, outline: isFirst ? `2px solid ${team.color}` : undefined }}
+      // Track the pointer so the spotlight below can follow it. Pure CSS vars,
+      // no re-render; the glow simply sits still under reduced motion.
+      onMouseMove={(e) => {
+        const el = e.currentTarget;
+        const r = el.getBoundingClientRect();
+        el.style.setProperty("--mx", `${e.clientX - r.left}px`);
+        el.style.setProperty("--my", `${e.clientY - r.top}px`);
+      }}
       // Deliberately no aria-label: WCAG 2.5.3 wants the visible text in the
       // accessible name, so let the card's own content compose it (the CountUp
       // spans contribute their final values as real text).
@@ -217,6 +225,15 @@ export function WantedPoster({
           <span className="inline-block h-2.5 w-2.5 rounded-full align-middle" style={{ background: team.color, boxShadow: `0 0 8px ${team.color}` }} />
         </span>
       </div>
+
+      {/* Pointer-following spotlight in the crew's own accent colour. */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-30"
+        style={{
+          background: `radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), var(--glow), transparent 70%)`,
+        }}
+      />
     </Link>
   );
 }

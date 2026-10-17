@@ -176,6 +176,13 @@ body {
 .rank-down { color: #ff8d8d; }
 .rank-same { color: rgba(244, 229, 198, 0.55); }
 
+/* The Bounty Board cards are a LIGHT parchment surface, so the dark-theme rank
+   colours above are invisible on them ("no change" vanished entirely). Rebind to
+   ink tones with real contrast against the cream background. */
+.parchment .rank-up { color: #1c6b3a; }
+.parchment .rank-down { color: #a1301d; }
+.parchment .rank-same { color: rgba(58, 42, 22, 0.62); }
+
 .rising {
   animation: riseUp 0.5s cubic-bezier(0.2, 1, 0.3, 1) both;
 }

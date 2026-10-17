@@ -32,6 +32,15 @@ export default async function WelcomePage() {
   return (
     <div className="space-y-7">
       <section className="panel relative overflow-hidden rounded-2xl p-6 text-center sm:p-10">
+        {/* Drifting accent blobs — a living hero instead of a flat panel. Uses
+            the existing `floaty` keyframe, and globals.css collapses every
+            animation under prefers-reduced-motion, so it simply sits still. */}
+        <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+          <span className="absolute -left-10 top-0 h-40 w-40 rounded-full bg-ocean-2/40 blur-3xl animate-[floaty_16s_ease-in-out_infinite]" />
+          <span className="absolute -right-6 top-8 h-48 w-48 rounded-full bg-sunset/30 blur-3xl animate-[floaty_21s_ease-in-out_infinite]" />
+          <span className="absolute bottom-0 left-1/3 h-40 w-40 rounded-full bg-straw/25 blur-3xl animate-[floaty_26s_ease-in-out_infinite]" />
+        </div>
+        <div className="relative">
         <p className="font-stencil text-xs uppercase tracking-[0.3em] text-sunset sm:text-sm">
           {state.config.schoolName}
         </p>
@@ -58,6 +67,7 @@ export default async function WelcomePage() {
           >
             <Icon name="users" size={16} /> About the developer
           </Link>
+        </div>
         </div>
       </section>
 
