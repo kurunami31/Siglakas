@@ -32,15 +32,7 @@ export default async function WelcomePage() {
   return (
     <div className="space-y-7">
       <section className="panel relative overflow-hidden rounded-2xl p-6 text-center sm:p-10">
-        <Image
-          src="/brand/siglakas-logo.png"
-          alt="SIGLAKAS 2026"
-          width={160}
-          height={160}
-          priority
-          className="mx-auto h-28 w-28 rounded-full bg-white object-cover shadow-[0_0_40px_-12px_var(--color-straw)] ring-1 ring-straw/40 sm:h-36 sm:w-36"
-        />
-        <p className="font-stencil mt-4 text-xs uppercase tracking-[0.3em] text-sunset sm:text-sm">
+        <p className="font-stencil text-xs uppercase tracking-[0.3em] text-sunset sm:text-sm">
           {state.config.schoolName}
         </p>
         <h1 className="font-display mt-1 text-4xl text-parchment sm:text-6xl">

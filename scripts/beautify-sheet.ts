@@ -417,6 +417,7 @@ async function main() {
     formula: string,
     format: Record<string, unknown>,
     colSpan: number,
+    startCol = 0,
   ) => {
     const sid = sheetId(title);
     if (sid === undefined) return;
@@ -425,7 +426,15 @@ async function main() {
     requests.push({
       addConditionalFormatRule: {
         rule: {
-          ranges: [{ sheetId: sid, startRowIndex: 1, endRowIndex: 4000, startColumnIndex: 0, endColumnIndex: colSpan }],
+          ranges: [
+            {
+              sheetId: sid,
+              startRowIndex: 1,
+              endRowIndex: 4000,
+              startColumnIndex: startCol,
+              endColumnIndex: startCol + colSpan,
+            },
+          ],
           booleanRule: { condition: { type: "CUSTOM_FORMULA", values: [{ userEnteredValue: formula }] }, format },
         },
         index,
@@ -438,11 +447,13 @@ async function main() {
     textFormat: { bold, foregroundColor: C.ink },
   });
 
-  // Results: medal colours by placement, and drafts visually distinct.
-  // (No "published" tint — every published row would mask the medal colours.)
-  cf("Results", `=$C2=1`, tint(C.gold, true), 7);
-  cf("Results", `=$C2=2`, tint(C.silver, true), 7);
-  cf("Results", `=$C2=3`, tint(C.bronze, true), 7);
+  // Results: the medal colour marks the PLACEMENT cell only. Painting the whole
+  // row A-G fought the zebra banding and, once ~1,100 result rows exist, turned
+  // the tally into a wall of colour. A single tinted cell still makes 1st/2nd/3rd
+  // jump out while the row stays readable.
+  cf("Results", `=$C2=1`, tint(C.gold, true), 1, 2);
+  cf("Results", `=$C2=2`, tint(C.silver, true), 1, 2);
+  cf("Results", `=$C2=3`, tint(C.bronze, true), 1, 2);
   cf("Results", `=LOWER($E2)="draft"`, { textFormat: { italic: true, foregroundColor: C.muted } }, 7);
 
   // Events: a row flagged for review is the loudest signal, then live, then locked.
