@@ -14,6 +14,7 @@ const LINKS: Array<{ href: string; label: string; plain: string; icon: IconName 
   { href: "/events", label: "Islands", plain: "Events", icon: "map" },
   { href: "/sports", label: "Sports Seas", plain: "Sports", icon: "ball" },
   { href: "/display", label: "TV Mode", plain: "TV Mode", icon: "tv" },
+  { href: "/about", label: "About", plain: "About", icon: "users" },
 ];
 
 export function SiteHeader() {
@@ -25,7 +26,7 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-foam/15 bg-ink/80 backdrop-blur-md print:hidden">
       <div className="mx-auto flex max-w-7xl items-center gap-3 px-3 py-2 sm:px-5">
-        <Link href="/" className="flex min-w-0 items-center gap-2.5">
+        <Link href="/welcome" className="flex min-w-0 items-center gap-2.5">
           {/* The official SIGLAKAS festival mark. Decorative here: the wordmark
               beside it already names the site, so alt is empty on purpose. */}
           <Image

@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Link from "next/link";
 import "./globals.css";
 import { LiveProvider } from "@/components/providers";
 import { Ocean } from "@/components/ocean";
@@ -68,6 +69,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <p className="mt-1">
               {state.config.schoolName} · Original pirate-inspired artwork. Crew mascot logos are the property of their
               respective faculties and campuses.
+            </p>
+            <p className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+              <Link href="/welcome" className="min-h-6 text-foam/70 hover:text-straw hover:underline">
+                Welcome
+              </Link>
+              <Link href="/about" className="min-h-6 text-foam/70 hover:text-straw hover:underline">
+                About the developer
+              </Link>
             </p>
             <p className="mt-1">
               Built for the Grand Line · {state.events.length} islands · {state.teams.length} crews
