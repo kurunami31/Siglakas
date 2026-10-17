@@ -7,6 +7,7 @@ import { Icon } from "@/components/icons";
 import { ROLES, ROLE_BLURB, ROLE_SHORT } from "@/lib/auth/roles";
 import type { Role, Team } from "@/lib/types";
 import { useAdmin } from "./admin-shell";
+import { Select } from "@/components/select";
 
 /**
  * Super Admin console for handing out competition-day logins. The account list
@@ -183,39 +184,25 @@ function CreateAccount({
             </span>
           </label>
 
-          <label className="block">
-            <span className="mb-1 block text-xs uppercase tracking-wider text-foam/70">Role</span>
-            <select
+          <div>
+            <Select
+              label="Role"
               value={role}
-              onChange={(e) => setRole(e.target.value as Role)}
-              className="w-full rounded-lg border border-foam/25 bg-ink/60 px-3 py-2.5 text-parchment"
-            >
-              {ROLES.map((r) => (
-                <option key={r} value={r}>
-                  {ROLE_SHORT[r]}
-                </option>
-              ))}
-            </select>
+              onChange={setRole}
+              options={ROLES.map((r) => ({ value: r, label: ROLE_SHORT[r] }))}
+            />
             <span className="mt-1 block text-[0.7rem] text-foam/50">{ROLE_BLURB[role]}</span>
-          </label>
+          </div>
 
-          <label className="block">
-            <span className="mb-1 block text-xs uppercase tracking-wider text-foam/70">
-              Crew (optional)
-            </span>
-            <select
-              value={teamId}
-              onChange={(e) => setTeamId(e.target.value)}
-              className="w-full rounded-lg border border-foam/25 bg-ink/60 px-3 py-2.5 text-parchment"
-            >
-              <option value="">— none —</option>
-              {teams.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.shortName} · {t.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <Select
+            label="Crew (optional)"
+            value={teamId}
+            onChange={setTeamId}
+            options={[
+              { value: "", label: "— none —" },
+              ...teams.map((t) => ({ value: t.id, label: `${t.shortName} · ${t.name}` })),
+            ]}
+          />
 
           <label className="block">
             <span className="mb-1 block text-xs uppercase tracking-wider text-foam/70">Password</span>
@@ -335,36 +322,19 @@ function AccountRow({
       </div>
 
       <div className="mt-3 grid gap-3 sm:grid-cols-3">
-        <label className="block">
-          <span className="mb-1 block text-xs uppercase tracking-wider text-foam/70">Role</span>
-          <select
-            value={role}
-            onChange={(e) => setRole(e.target.value as Role)}
-            className="w-full rounded-lg border border-foam/25 bg-ink/60 px-3 py-2.5 text-parchment"
-          >
-            {ROLES.map((r) => (
-              <option key={r} value={r}>
-                {ROLE_SHORT[r]}
-              </option>
-            ))}
-          </select>
-        </label>
+        <Select
+          label="Role"
+          value={role}
+          onChange={setRole}
+          options={ROLES.map((r) => ({ value: r, label: ROLE_SHORT[r] }))}
+        />
 
-        <label className="block">
-          <span className="mb-1 block text-xs uppercase tracking-wider text-foam/70">Crew</span>
-          <select
-            value={teamId}
-            onChange={(e) => setTeamId(e.target.value)}
-            className="w-full rounded-lg border border-foam/25 bg-ink/60 px-3 py-2.5 text-parchment"
-          >
-            <option value="">— none —</option>
-            {teams.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.shortName}
-              </option>
-            ))}
-          </select>
-        </label>
+        <Select
+          label="Crew"
+          value={teamId}
+          onChange={setTeamId}
+          options={[{ value: "", label: "— none —" }, ...teams.map((t) => ({ value: t.id, label: t.shortName }))]}
+        />
 
         <label htmlFor={`active-${id}`} className="flex items-center gap-2 self-end pb-2.5">
           <input

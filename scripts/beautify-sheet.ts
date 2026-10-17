@@ -38,8 +38,11 @@ type RGB = { red: number; green: number; blue: number };
 
 /** Palette borrowed from the website so the sheet matches the site. */
 const C = {
-  ink: { red: 0.05, green: 0.12, blue: 0.2 },
-  ink2: { red: 0.1, green: 0.2, blue: 0.3 },
+  // Pirate theme: dark oak header bars, aged-parchment body banding, rope tan
+  // for the secondary fills and straw gold for accents — the same family the
+  // site uses, so the spreadsheet reads like part of the same artefact.
+  ink: { red: 0.24, green: 0.16, blue: 0.1 },
+  ink2: { red: 0.34, green: 0.23, blue: 0.14 },
   straw: { red: 0.98, green: 0.75, blue: 0.14 },
   gold: { red: 1.0, green: 0.91, blue: 0.58 },
   silver: { red: 0.87, green: 0.89, blue: 0.92 },
@@ -56,9 +59,9 @@ const C = {
   brown: { red: 0.45, green: 0.33, blue: 0.22 },
   grey: { red: 0.55, green: 0.57, blue: 0.6 },
   amber: { red: 1.0, green: 0.94, blue: 0.78 },
-  band1: { red: 0.965, green: 0.976, blue: 0.984 },
-  band2: { red: 1, green: 1, blue: 1 },
-  muted: { red: 0.62, green: 0.64, blue: 0.66 },
+  band1: { red: 0.976, green: 0.945, blue: 0.882 },
+  band2: { red: 0.996, green: 0.988, blue: 0.965 },
+  muted: { red: 0.55, green: 0.48, blue: 0.42 },
   greenTint: { red: 0.9, green: 0.96, blue: 0.92 },
 } satisfies Record<string, RGB>;
 
@@ -309,20 +312,23 @@ async function main() {
       });
     }
 
-    // header row: white on deep ocean, wrapped, tall
+    // header row: gold text on a dark oak bar with a gold rule beneath it — the
+    // same "burnt edge" treatment the site's tables use.
     requests.push({
       repeatCell: {
         range: { sheetId: sid, startRowIndex: 0, endRowIndex: 1 },
         cell: {
           userEnteredFormat: {
             backgroundColor: C.ink,
-            textFormat: { bold: true, foregroundColor: C.white, fontSize: 10 },
+            textFormat: { bold: true, foregroundColor: C.gold, fontSize: 10 },
             horizontalAlignment: "LEFT",
             verticalAlignment: "MIDDLE",
             wrapStrategy: "WRAP",
+            borders: { bottom: { style: "SOLID_MEDIUM", color: C.straw } },
           },
         },
-        fields: "userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,verticalAlignment,wrapStrategy)",
+        fields:
+          "userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,verticalAlignment,wrapStrategy,borders)",
       },
     });
     requests.push({

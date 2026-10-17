@@ -21,10 +21,10 @@ export function PartnerLogos({ className = "" }: { className?: string }) {
   return (
     <ul
       aria-label="Festival organisers and offices"
-      className={`grid grid-cols-2 justify-items-center gap-4 sm:grid-cols-4 ${className}`}
+      className={`flex flex-wrap items-start justify-center gap-x-2 gap-y-3 sm:gap-x-4 ${className}`}
     >
       {PARTNERS.map((p) => (
-        <li key={p.src} className="flex w-full flex-col items-center gap-1.5">
+        <li key={p.src} className="flex w-[4.75rem] flex-col items-center gap-1 sm:w-[5.5rem]">
           <Image
             src={p.src}
             alt={p.label}
