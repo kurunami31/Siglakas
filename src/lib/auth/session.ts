@@ -65,9 +65,23 @@ interface Attempt {
 const attempts = new Map<string, Attempt>();
 const WINDOW_MS = 10 * 60 * 1000;
 const MAX_ATTEMPTS = 8;
+/** Above this many tracked keys, sweep the expired ones. */
+const PRUNE_AT = 128;
+
+/**
+ * Drop entries whose window has lapsed. Without this the map grows without
+ * bound: a key is only ever removed on a successful login, so failed attempts
+ * from many addresses would accumulate for the lifetime of the process.
+ */
+function prune(now: number): void {
+  for (const [key, entry] of attempts) {
+    if (now - entry.first > WINDOW_MS) attempts.delete(key);
+  }
+}
 
 export function rateLimit(key: string): { ok: boolean; retryAfterSeconds: number } {
   const now = Date.now();
+  if (attempts.size > PRUNE_AT) prune(now);
   const entry = attempts.get(key);
   if (!entry || now - entry.first > WINDOW_MS) {
     attempts.set(key, { count: 1, first: now });

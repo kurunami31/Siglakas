@@ -15,7 +15,8 @@
     "beautify-sheet": "tsx scripts/beautify-sheet.ts",
     "service-account-json": "tsx scripts/service-account-json.ts",
     "create-admin": "tsx scripts/create-admin.ts",
-    "rehearse": "tsx scripts/rehearse.ts"
+    "rehearse": "tsx scripts/rehearse.ts",
+    "backup-sheet": "tsx scripts/backup-sheet.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
