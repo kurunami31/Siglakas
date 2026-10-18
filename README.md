@@ -196,9 +196,6 @@ Generate the single-line JSON with `npm run service-account-json`.
 
 ---
 
-## Documentation
-
-- [`docs/sheet-template.md`](docs/sheet-template.md) — every tab, every column, who edits what.
 ## Monitoring, backups and health
 
 The public UI shows a "reconnecting" pill when the sheet is unreachable — but nobody
@@ -281,8 +278,9 @@ snapshot, which includes the bcrypt password hashes and the audit log. Caching i
 puts that data in two places; storing a hash-free projection of the state instead
 is the safer choice.
 
-## Docs
+## Documentation
 
+- [`docs/sheet-template.md`](docs/sheet-template.md) — every tab, every column, who edits what.
 - [`docs/pio-guide.md`](docs/pio-guide.md) — the PIO's day-of workflow.
 - [`docs/secretariat-guide.md`](docs/secretariat-guide.md) — the Secretariat's guide, including the rulebook.
 - [`docs/competition-day-checklist.md`](docs/competition-day-checklist.md) — the run-of-show checklist.
