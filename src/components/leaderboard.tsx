@@ -63,8 +63,14 @@ export function Leaderboard({ state, dense = false }: { state: CompetitionState;
               <motion.li
                 key={team.id}
                 layout={!reduce}
-                initial={reduce ? false : { opacity: 0, scale: 0.94 }}
-                animate={{ opacity: 1, scale: 1 }}
+                // Deliberately no `opacity: 0` in the initial state. Starting the
+                // entrance invisible means the server-rendered cards cannot paint
+                // until JS has hydrated — which is what put LCP at 4.1s and Speed
+                // Index at 5.7s on Lighthouse mobile while FCP was only 1.1s. A
+                // scale-only entrance keeps the motion and the content is
+                // paintable immediately.
+                initial={reduce ? false : { scale: 0.94 }}
+                animate={{ scale: 1 }}
                 exit={reduce ? undefined : { opacity: 0, scale: 0.94 }}
                 transition={{ type: "spring", stiffness: 320, damping: 30 }}
                 // `min-w-0` matters: a grid item defaults to `min-width: auto`,
