@@ -6,6 +6,8 @@ import { createContext, useContext, useState } from "react";
 import type { Role } from "@/lib/types";
 import { can, type Permission } from "@/lib/auth/permissions";
 import { ROLE_SHORT } from "@/lib/auth/roles";
+import { auditResults, summariseIssues } from "@/lib/data/data-quality";
+import { useLive } from "@/components/providers";
 import { Icon, type IconName } from "@/components/icons";
 
 export interface AdminSession {
@@ -44,8 +46,12 @@ const EXPORTS: Array<{ what: string; label: string }> = [
 export function AdminShell({ session, children }: { session: AdminSession; children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { state } = useLive();
   const [signingOut, setSigningOut] = useState(false);
   const links = NAV.filter((n) => can(session.role, n.perm));
+
+  const qualityIssues = auditResults(state.events, state.teams, state.results);
+  const qualityWarning = summariseIssues(qualityIssues);
 
   async function signOut() {
     setSigningOut(true);
@@ -120,7 +126,31 @@ export function AdminShell({ session, children }: { session: AdminSession; child
             Back to public site
           </Link>
         </aside>
-        <div className="min-w-0">{children}</div>
+        <div className="min-w-0">
+          {/* Results the scorer cannot resolve score nothing, silently. Surface
+              them here rather than only in the `check-sheet` CLI, because
+              nobody runs a command during the festival. */}
+          {qualityWarning && (
+            <div
+              role="alert"
+              className="mb-4 rounded-2xl border border-sunset/50 bg-sunset/10 p-3 text-sm"
+            >
+              <p className="flex items-start gap-2 text-parchment">
+                <Icon name="warning" size={16} className="mt-0.5 shrink-0 text-sunset" />
+                <span>
+                  <strong className="text-sunset">Results need attention.</strong> {qualityWarning}
+                </span>
+              </p>
+              <ul className="mt-1.5 space-y-0.5 pl-6 text-xs text-foam/80">
+                {qualityIssues.slice(0, 5).map((issue) => (
+                  <li key={issue.message}>{issue.message}</li>
+                ))}
+                {qualityIssues.length > 5 && <li>…and {qualityIssues.length - 5} more.</li>}
+              </ul>
+            </div>
+          )}
+          {children}
+        </div>
       </div>
     </AdminContext.Provider>
   );

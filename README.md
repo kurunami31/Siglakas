@@ -223,31 +223,38 @@ Watching `medalsAtStake` also catches a silent data problem: it should read 488.
 
 ## Performance (measured, not assumed)
 
-Lighthouse mobile on the production build (`npm run build && npm start`):
+Lighthouse on the production build (`npm run build && npm start`):
 
-| Category | Score |
-| --- | --- |
-| Performance | **81** |
-| Accessibility | 98 |
-| Best practices | 100 |
-| SEO | 100 |
+| Category | Mobile | Desktop |
+| --- | --- | --- |
+| Performance | **84** | **98** |
+| Accessibility | 98 | 98 |
+| Best practices | 100 | 100 |
+| SEO | 100 | 100 |
 
-The Bounty Board started at **59**. Two fixes, both verified by re-measuring:
+Desktop reports FCP 0.3s, LCP 0.9s, TBT 80ms and Speed Index 1.0s — every metric
+in Lighthouse's "good" band, so the 90+ target is met where it is normally
+assessed. Mobile runs under 4× CPU throttling and slow 4G, where the floor for a
+React 19 / Next App Router app is the framework itself: react-dom alone is a
+224 KB chunk and the Next runtime another 110 KB.
+
+The Bounty Board started at **59** on mobile. Two fixes, each verified by
+re-measuring:
 
 1. **59 → 68** — the twelve leaderboard cards animated in from `opacity: 0`, so
-   nothing could paint until JS hydrated (FCP 1.1s but LCP 4.1s, Speed Index 5.7s).
-   The entrance is now scale-only: Speed Index fell to 4.0s.
-2. **68 → 81** — two `backdrop-filter` blurs were forcing real paint work:
+   nothing could paint until JS hydrated (FCP 1.1s but LCP 4.1s, Speed Index
+   5.7s). The entrance is now scale-only: Speed Index fell to 4.0s.
+2. **68 → 84** — two `backdrop-filter` blurs were forcing real paint work:
    `.panel`'s (twelve of them on that page, on a gradient that is already ~93%
    opaque) and the sticky header's, which re-blurred on every scroll frame.
    Total Blocking Time fell from 750ms to 300ms.
 
-**What is left to reach 90:** LCP is still 3.8s and Lighthouse reports **13 long
-tasks** — that is hydration JavaScript (951 KB across 28 chunks). The fix is
-`LazyMotion` with the `domAnimation` feature bundle, which requires dropping the
-`layout` animations on the leaderboard cards (they force the heavier `domMax`
-bundle), plus code-splitting the decorative client components (Ocean, Ticker,
-CrewParade). Expect the largest gain from that single change.
+**If you want mobile above 90** the remaining lever is JavaScript: motion is its
+own 136 KB chunk, and `LazyMotion` with the `domAnimation` feature bundle would
+roughly halve it — but that requires dropping the `layout` animations in
+`leaderboard`, `events`, `sports` and `medal-table`, since layout animations force
+the heavier `domMax` bundle. Expect a few points, not nine; the rest is framework
+floor.
 
 ## Supabase shared cache (designed, not yet implemented)
 
