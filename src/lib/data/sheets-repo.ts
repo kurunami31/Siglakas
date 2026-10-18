@@ -191,12 +191,29 @@ export class SheetsRepository implements Repository {
     };
   }
 
-  private async writeTable(tab: string, headers: string[], rows: Array<Array<string | number>>) {
-    // `values.update` only overwrites the cells it is given, so a table that
-    // shrinks (a deleted result, team or fixture) would leave the old trailing
-    // rows behind as orphans. Clear the tab first, then write.
-    await this.client.clear(`${tab}!A1:Z`);
-    await this.client.update(`${tab}!A1`, [headers, ...rows]);
+  /**
+   * Write a whole table in ONE call.
+   *
+   * The previous version cleared `A1:Z` and then wrote, because `values.update`
+   * only overwrites the cells it is given and a shrinking table would leave
+   * trailing orphans. But that left a window in which the tab was EMPTY, and a
+   * concurrent reader — the app's own poller, or an admin request — could adopt
+   * a snapshot with no events at all and briefly collapse the public board.
+   * (It also produced a bogus "medal total is 435" during development.)
+   *
+   * Padding the new rows out to the previous height overwrites exactly the same
+   * cells without ever exposing a half-written table.
+   */
+  private async writeTable(
+    tab: string,
+    headers: string[],
+    rows: Array<Array<string | number>>,
+    previousRows = 0,
+  ) {
+    const blanks = Array.from({ length: Math.max(0, previousRows - rows.length) }, () =>
+      Array<string>(headers.length).fill(""),
+    );
+    await this.client.update(`${tab}!A1`, [headers, ...rows, ...blanks]);
   }
 
   async apply(command: Command): Promise<RawSheets> {
@@ -231,7 +248,7 @@ export class SheetsRepository implements Repository {
             results.push(r);
           }
         }
-        await this.writeTable(TABS.results, HEADERS.results, results.map(resultRow));
+        await this.writeTable(TABS.results, HEADERS.results, results.map(resultRow), raw.results.length);
         raw.results = results;
         break;
       }
@@ -242,6 +259,7 @@ export class SheetsRepository implements Repository {
           TABS.judgeScores,
           HEADERS.judgeScores,
           judgeScores.map((j) => [j.eventId, j.teamId, j.judge, j.criterion, j.score]),
+          raw.judgeScores.length,
         );
         raw.judgeScores = judgeScores;
         break;
@@ -252,7 +270,7 @@ export class SheetsRepository implements Repository {
           command.type === "deleteMatch" ? m.id !== command.id : m.id !== command.match.id,
         );
         if (command.type === "saveMatch") matches.push(command.match);
-        await this.writeTable(TABS.matches, HEADERS.matches, matches.map(matchRow));
+        await this.writeTable(TABS.matches, HEADERS.matches, matches.map(matchRow), raw.matches.length);
         raw.matches = matches;
         break;
       }
@@ -267,26 +285,31 @@ export class SheetsRepository implements Repository {
       }
       case "updateConfig": {
         const merged = { ...raw.config, ...command.patch };
-        await this.writeTable(TABS.config, HEADERS.config, configRows(merged as Config));
+        await this.writeTable(
+          TABS.config,
+          HEADERS.config,
+          configRows(merged as Config),
+          configRows(raw.config as Config).length,
+        );
         raw.config = merged as RawSheets["config"];
         break;
       }
       case "updateEvent": {
         const events = raw.events.map((e) => (e.id === command.id ? { ...e, ...command.patch } : e));
-        await this.writeTable(TABS.events, HEADERS.events, events.map(eventRow));
+        await this.writeTable(TABS.events, HEADERS.events, events.map(eventRow), raw.events.length);
         raw.events = events;
         break;
       }
       case "upsertTeam": {
         const teams = raw.teams.filter((t) => t.id !== command.team.id);
         teams.push(command.team);
-        await this.writeTable(TABS.teams, HEADERS.teams, teams.map(teamRow));
+        await this.writeTable(TABS.teams, HEADERS.teams, teams.map(teamRow), raw.teams.length);
         raw.teams = teams;
         break;
       }
       case "deleteTeam": {
         const teams = raw.teams.filter((t) => t.id !== command.id);
-        await this.writeTable(TABS.teams, HEADERS.teams, teams.map(teamRow));
+        await this.writeTable(TABS.teams, HEADERS.teams, teams.map(teamRow), raw.teams.length);
         raw.teams = teams;
         break;
       }
@@ -297,6 +320,7 @@ export class SheetsRepository implements Repository {
           TABS.criteria,
           HEADERS.criteria,
           criteria.map((c) => [c.eventId, c.criterion, c.weight, c.order]),
+          raw.criteria.length,
         );
         raw.criteria = criteria;
         break;
@@ -313,14 +337,14 @@ export class SheetsRepository implements Repository {
           teamId: command.user.teamId,
           active: command.user.active,
         });
-        await this.writeTable(TABS.users, HEADERS.users, users.map(userRow));
+        await this.writeTable(TABS.users, HEADERS.users, users.map(userRow), raw.users.length);
         raw.users = users;
         break;
       }
       case "deleteUser": {
         const target = command.username.toLowerCase();
         const users = raw.users.filter((u) => u.username.toLowerCase() !== target);
-        await this.writeTable(TABS.users, HEADERS.users, users.map(userRow));
+        await this.writeTable(TABS.users, HEADERS.users, users.map(userRow), raw.users.length);
         raw.users = users;
         break;
       }
