@@ -1,4 +1,5 @@
 import type { EventItem, Match, Result } from "../types";
+import { isPoolLabel } from "../match-rounds";
 
 export interface RoundRobinRow {
   teamId: string;
@@ -178,6 +179,24 @@ export function matchEventPlacements(matches: Match[]): Record<string, number> {
     const winner = winnerOf(bronze);
     // A bronze playoff must never overwrite a gold or silver placing.
     if (winner && placements[winner] === undefined) placements[winner] = 3;
+  }
+
+  // A league with no knockout final: the pool table itself decides the placings.
+  // Three conditions, all deliberate:
+  //   - only when there is no Final row, so a knockout event is never decided by
+  //     its pool stage;
+  //   - only from rounds explicitly marked as a pool (Round Robin / Pool /
+  //     Group / League), because `classifyRound` lumps early knockout rounds
+  //     into "other" and a semifinal must never be read as a league table;
+  //   - only once EVERY pool fixture is final. A half-played league must not
+  //     crown anyone, and two fixtures do not make a league.
+  if (finals.length === 0) {
+    const pool = matches.filter((m) => isPoolLabel(m.round));
+    if (pool.length >= 2 && pool.every((m) => m.status === "final")) {
+      for (const row of computeRoundRobin(pool)) {
+        if (row.rank <= 3) placements[row.teamId] = row.rank;
+      }
+    }
   }
 
   return placements;

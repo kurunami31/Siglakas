@@ -121,14 +121,34 @@ One row per crew per event. To clear an event, unpublish it or delete its rows.
 
 ### `Matches` — team sports
 
-`id`, `event_id`, `round`, `team_a`, `team_b`, `score_a`, `score_b`, `detail`, `winner`, `status`
+`event_id`, `round`, `team_a`, `team_b`, `score_a`, `score_b`, `status`, `detail`, `winner`, `id`
 
-- `round` — free text, but the site reads it: it recognises *Round Robin*, *Quarterfinal*,
-  *Semifinal*, *Final* and *Bronze* / *3rd place*. Write "Bronze medal match" for the
-  third-place playoff and the loser is credited with the bronze.
-- `status` — `scheduled`, `live`, `final`. Only `final` games count.
-- When the decisive final is `final`, the site derives placements for the whole
-  bracket (winner, runner-up, bronze) and publishes them.
+The typed fields come first; **`winner` and `id` are hidden columns** because both are
+derived — `winner` falls back to the higher score, and the app generates `id` as
+`event--round--teamA-teamB`. So a fixture is really six values: which event, which
+round, the two crews, the two scores.
+
+- `event_id` — must match an Events id exactly. A typo scores nothing, **silently**.
+  The admin banner and `npm run check-sheet` both flag it.
+- `round` — a **strict dropdown** of the five labels the site understands:
+  *Round Robin*, *Quarterfinal*, *Semifinal*, *Final*, *Bronze medal match*.
+  Sheets will reject anything else, because an unrecognised round crowns nobody.
+  **Final** decides 1st and 2nd; **Bronze medal match** decides 3rd.
+- `team_a` / `team_b` — Teams ids (`fted`, `facet`…), dropdowns in the sheet.
+- `status` — `scheduled`, `live`, `final`. Only `final` games count toward placements.
+- `detail` — free text for display, e.g. `25–23, 25–19`.
+- `winner` — leave blank to use the higher score; fill it only when the scores tie.
+
+Two things that surprise people:
+
+- **A bronze-medal match is the only source of bronze.** Omit that row and the event
+  publishes gold and silver only.
+- **A pure round-robin event is decided by its pool table**, but only once *every*
+  pool fixture is `final`. Until then it awards nothing. A knockout event with a
+  `Final` row is never decided by its pool stage.
+
+Hand-entered `Results` rows for an event always take precedence over anything derived
+from matches, so use one route per event — never both.
 
 ### `JudgeScores`
 

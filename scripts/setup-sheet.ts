@@ -13,6 +13,7 @@
 import { loadCredentialsFromEnv, SheetsClient } from "../src/lib/data/google";
 import { HEADERS, TABS, configRows, eventRow, teamRow } from "../src/lib/data/sheets-repo";
 import { DEFAULT_CONFIG, EVENTS, TEAMS, buildCriteria } from "../src/lib/data/seed";
+import { ROUND_LABELS } from "../src/lib/match-rounds";
 
 type TabKey = keyof typeof TABS;
 type Aoa = Array<Array<string | number>>;
@@ -51,10 +52,10 @@ function loadEnvFiles() {
 
 /* ------------------------------- validation ------------------------------- */
 
-const listRule = (values: string[]) => ({
+const listRule = (values: string[], strict = false) => ({
   condition: { type: "ONE_OF_LIST", values: values.map((v) => ({ userEnteredValue: v })) },
   showCustomUi: true,
-  strict: false,
+  strict,
 });
 
 const numberRule = (min: number, max: number) => ({
@@ -91,6 +92,9 @@ const VALIDATION: Array<{
   { tab: "matches", field: "score_a", rule: () => numberRule(0, 999), hint: "Score (0-999)" },
   { tab: "matches", field: "score_b", rule: () => numberRule(0, 999), hint: "Score (0-999)" },
   { tab: "matches", field: "status", rule: () => listRule(["scheduled", "live", "final"]), hint: "scheduled, live or final" },
+  // STRICT: an unrecognised round crowns nobody, so the five labels are enforced
+  // rather than merely suggested. Use the app if a format needs something else.
+  { tab: "matches", field: "round", rule: () => listRule([...ROUND_LABELS], true), hint: `One of: ${ROUND_LABELS.join(", ")}` },
   { tab: "judgeScores", field: "score", rule: () => numberRule(0, 1000), hint: "Score (0-1000)" },
   // The tally tabs are edited by hand during the festival, so every id column
   // gets a dropdown. A typo here is the worst failure mode in the whole system:
