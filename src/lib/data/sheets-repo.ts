@@ -239,6 +239,9 @@ export class SheetsRepository implements Repository {
               placement: row.placement,
               tie: row.tie,
               status: row.status,
+              // Without this the participant count is silently dropped on the way
+              // to the sheet, and a participation event awards nothing at all.
+              count: row.count ?? 0,
               enteredBy: command.actor,
               timestamp: new Date().toISOString(),
             });

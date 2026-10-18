@@ -55,6 +55,7 @@ export class DemoRepository implements Repository {
             placement: row.placement,
             tie: row.tie,
             status: row.status,
+            count: row.count ?? 0,
             enteredBy: command.actor,
             timestamp: new Date().toISOString(),
           };
