@@ -284,10 +284,10 @@ describe("seed catalogue integrity", () => {
     expect(teams.filter((t) => t.group === "extension_campus")).toHaveLength(5);
   });
 
-  it("has the full 97-event catalogue totalling 484 medals per colour", () => {
+  it("has the full 97-event catalogue totalling 426 medals per colour", () => {
     expect(EVENTS).toHaveLength(97);
     const total = EVENTS.reduce((sum, e) => sum + e.medalWeight, 0);
-    expect(total).toBe(484);
+    expect(total).toBe(426);
   });
 
   it("matches the printed section subtotals", () => {
@@ -310,10 +310,10 @@ describe("seed catalogue integrity", () => {
     expect(sum("Special Category")).toBe(38);
   });
 
-  it("splits 324 sports / 160 cultural", () => {
+  it("splits 266 sports / 160 cultural", () => {
     const sports = EVENTS.filter((e) => e.division === "sports").reduce((s, e) => s + e.medalWeight, 0);
     const cultural = EVENTS.filter((e) => e.division === "cultural").reduce((s, e) => s + e.medalWeight, 0);
-    expect(sports).toBe(324);
+    expect(sports).toBe(266);
     expect(cultural).toBe(160);
   });
 

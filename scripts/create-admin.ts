@@ -98,12 +98,20 @@ async function main() {
   const activeIdx = idx("active");
   const teamIdx = idx("team_id");
   const rows = table.slice(1).filter((r) => (r[0] ?? "").trim() !== "");
+  /** Pre-write height, so a shrinking list can be padded rather than cleared. */
+  const originalRowCount = rows.length;
   const find = (name: string) => rows.findIndex((r) => (r[0] ?? "").toLowerCase() === name.toLowerCase());
 
-  const persist = async () => {
-    // Clear the body first so a shrinking list can't leave orphan rows behind.
-    await client.clear(`${TABS.users}!A2:Z`);
-    await client.update(`${TABS.users}!A1`, [HEADERS.users, ...rows]);
+  // One ATOMIC write, padded to the previous height. The old version cleared A2:Z
+  // and then wrote: during that window the Users tab was empty, and if the app's
+  // poller read it then it cached a snapshot with NO accounts — which blocks every
+  // login until the next poll (up to SHEET_POLL_MS). That cost real confusion
+  // during testing. Padding still avoids leaving orphan rows behind a shrink.
+  const persist = async (previousRows: number) => {
+    const blanks = Array.from({ length: Math.max(0, previousRows - rows.length) }, () =>
+      Array<string>(HEADERS.users.length).fill(""),
+    );
+    await client.update(`${TABS.users}!A1`, [HEADERS.users, ...rows, ...blanks]);
   };
 
   /* ------------------------------- list ------------------------------- */
@@ -140,7 +148,7 @@ async function main() {
         die("Lockout protection: that is the last active Super Admin.");
       }
       rows.splice(at, 1);
-      await persist();
+      await persist(originalRowCount);
       log(`\n  Removed ${username}.\n`);
       return;
     }
@@ -150,7 +158,7 @@ async function main() {
       die("Lockout protection: that is the last active Super Admin.");
     }
     rows[at][activeIdx] = active ? "TRUE" : "FALSE";
-    await persist();
+    await persist(originalRowCount);
     log(`\n  ${username} is now ${active ? "active" : "disabled"}.\n`);
     return;
   }
@@ -202,7 +210,7 @@ async function main() {
     log("  Creating new account.");
   }
 
-  await persist();
+  await persist(originalRowCount);
 
   log("");
   log(`  done: ${username} (${role}) written to "${TABS.users}"`);

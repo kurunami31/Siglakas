@@ -46,7 +46,7 @@ export const HEADERS: Record<keyof typeof TABS, string[]> = {
     "status", "detail", "winner", "id",
   ],
   judgeScores: ["event_id", "team_id", "judge", "criterion", "score"],
-  results: ["event_id", "team_id", "placement", "tie", "status", "entered_by", "timestamp"],
+  results: ["event_id", "team_id", "placement", "tie", "status", "entered_by", "timestamp", "count"],
   announcements: ["timestamp", "message", "posted_by"],
   auditLog: ["timestamp", "actor", "action", "entity", "entity_id", "field", "old_value", "new_value"],
   users: ["username", "password_hash", "role", "team_id", "active"],
@@ -99,7 +99,13 @@ export class SheetsRepository implements Repository {
       division: r.division === "cultural" ? "cultural" : "sports",
       category: r.category || "Uncategorised",
       scoringType:
-        r.scoring_type === "judged" ? "judged" : r.scoring_type === "match" ? "match" : "placement",
+        r.scoring_type === "judged"
+          ? "judged"
+          : r.scoring_type === "match"
+            ? "match"
+            : r.scoring_type === "participation"
+              ? "participation"
+              : "placement",
       medalWeight: num(r.medal_weight),
       gender: (r.gender as Gender) || "Open",
       multiplier: num(r.multiplier, 1) || 1,
@@ -150,6 +156,7 @@ export class SheetsRepository implements Repository {
       status: r.status.toLowerCase() === "published" ? "published" : "draft",
       enteredBy: r.entered_by,
       timestamp: r.timestamp,
+      count: num(r.count),
     }));
 
     const announcements: Announcement[] = table(TABS.announcements).map((r) => ({
@@ -390,7 +397,7 @@ const matchRow = (m: Match) => [
   m.eventId, m.round, m.teamA, m.teamB, m.scoreA, m.scoreB, m.status, m.detail ?? "", m.winner, m.id,
 ];
 const resultRow = (r: Result) => [
-  r.eventId, r.teamId, r.placement, r.tie ? "TRUE" : "FALSE", r.status, r.enteredBy, r.timestamp,
+  r.eventId, r.teamId, r.placement, r.tie ? "TRUE" : "FALSE", r.status, r.enteredBy, r.timestamp, r.count ?? 0,
 ];
 const userRow = (u: TeamUser) => [
   u.username, u.passwordHash, u.role, u.teamId, u.active ? "TRUE" : "FALSE",

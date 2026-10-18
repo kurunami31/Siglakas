@@ -14,6 +14,8 @@ export const resultRowSchema = z.object({
   placement,
   tie: z.boolean().default(false),
   status: z.enum(["draft", "published"]),
+  /** Participants, for `participation` events only. */
+  count: z.number().int().min(0).max(500).default(0),
 });
 
 export const judgeScoreSchema = z.object({
@@ -41,7 +43,7 @@ export const eventPatchSchema = z
   .object({
     name: z.string().min(1).max(120).optional(),
     category: z.string().max(80).optional(),
-    scoringType: z.enum(["placement", "judged", "match"]).optional(),
+    scoringType: z.enum(["placement", "judged", "match", "participation"]).optional(),
     medalWeight: z.number().int().min(0).max(100).optional(),
     multiplier: z.number().min(0).max(10).optional(),
     schedule: z.string().max(120).optional(),

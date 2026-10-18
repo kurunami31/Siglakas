@@ -15,6 +15,8 @@ export interface ResultRowInput {
   placement: number;
   tie: boolean;
   status: ResultStatus;
+  /** Participants, for `participation` events only. */
+  count?: number;
 }
 
 export type Command =

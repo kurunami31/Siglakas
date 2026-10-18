@@ -139,3 +139,69 @@ describe("medals at stake", () => {
     expect(deriveState(raw).standings.find((s) => s.teamId === "a")!.overall.totalMedals).toBe(0);
   });
 });
+
+describe("participation events", () => {
+  /** FUN RUN / FUNEBALL: no placing, one gold per participant. */
+  const rawFor = (count: number, weight = 1): RawSheets =>
+    ({
+      config: {},
+      teams: [
+        { id: "a", name: "Crew A", shortName: "A", group: "faculty", color: "#123456", logoFile: "a", mascot: "Alpha" },
+      ],
+      events: [
+        {
+          id: "e1",
+          name: "FUN RUN",
+          division: "sports",
+          category: "Special Event",
+          scoringType: "participation",
+          medalWeight: weight,
+          gender: "Open",
+          multiplier: 1,
+          status: "upcoming",
+          locked: false,
+          verify: false,
+        },
+      ],
+      criteria: [],
+      matches: [],
+      judgeScores: [],
+      announcements: [],
+      auditLog: [],
+      users: [],
+      results: [
+        { eventId: "e1", teamId: "a", placement: 0, tie: false, status: "published", enteredBy: "x", timestamp: "t", count },
+      ],
+    }) as unknown as RawSheets;
+
+  const overall = (count: number, weight = 1) =>
+    deriveState(rawFor(count, weight)).standings.find((s) => s.teamId === "a")!.overall;
+
+  it("awards exactly one gold per participant, and nothing else", () => {
+    const o = overall(7);
+    expect(o.gold).toBe(7);
+    expect(o.silver).toBe(0);
+    expect(o.bronze).toBe(0);
+    expect(o.totalMedals).toBe(7);
+  });
+
+  it("awards nothing to a crew that entered nobody", () => {
+    expect(overall(0).totalMedals).toBe(0);
+  });
+
+  it("gives no placement points, because there is no placing", () => {
+    expect(overall(7).points).toBe(0);
+  });
+
+  it("multiplies by the weight, which is exactly why it must stay 1", () => {
+    // Pinned down so nobody 'helpfully' restores the old 50/10 weights: at 50 a
+    // single participant would be worth 50 golds.
+    expect(overall(7, 2).gold).toBe(14);
+  });
+
+  it("still honours a draft row being unpublished", () => {
+    const raw = rawFor(7);
+    (raw as unknown as { results: Result[] }).results[0].status = "draft";
+    expect(deriveState(raw).standings.find((s) => s.teamId === "a")!.overall.totalMedals).toBe(0);
+  });
+});

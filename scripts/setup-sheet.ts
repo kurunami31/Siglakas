@@ -82,7 +82,7 @@ const VALIDATION: Array<{
 }> = [
   { tab: "teams", field: "group", rule: () => listRule(["faculty", "extension_campus"]), hint: "faculty or extension_campus" },
   { tab: "events", field: "division", rule: () => listRule(["sports", "cultural"]), hint: "sports or cultural" },
-  { tab: "events", field: "scoring_type", rule: () => listRule(["placement", "judged", "match"]), hint: "placement, judged or match" },
+  { tab: "events", field: "scoring_type", rule: () => listRule(["placement", "judged", "match", "participation"]), hint: "placement, judged, match or participation" },
   { tab: "events", field: "status", rule: () => listRule(["upcoming", "live", "finished"]), hint: "upcoming, live or finished" },
   { tab: "events", field: "medal_weight", rule: () => numberRule(0, 100), hint: "Medals at stake (0-100)" },
   { tab: "events", field: "multiplier", rule: () => numberRule(0, 10), hint: "Multiplier (0-10)" },
@@ -105,6 +105,7 @@ const VALIDATION: Array<{
   { tab: "results", field: "placement", rule: () => numberRule(0, 12), hint: "1-12, or 0 for participation" },
   { tab: "results", field: "tie", rule: boolRule, hint: "TRUE / FALSE" },
   { tab: "results", field: "status", rule: () => listRule(["draft", "published"]), hint: "draft or published - only published counts" },
+  { tab: "results", field: "count", rule: () => numberRule(0, 500), hint: "Participants (participation events only: 1 gold each)" },
   { tab: "matches", field: "event_id", rule: () => listRule(EVENTS.map((e) => e.id)), hint: "Pick an island id from the Events tab" },
   { tab: "matches", field: "team_a", rule: () => listRule(TEAMS.map((t) => t.id)), hint: "Pick a crew id from the Teams tab" },
   { tab: "matches", field: "team_b", rule: () => listRule(TEAMS.map((t) => t.id)), hint: "Pick a crew id from the Teams tab" },

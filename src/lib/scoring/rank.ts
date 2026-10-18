@@ -55,6 +55,34 @@ export function buildStandings(input: BuildStandingsInput): TeamStanding[] {
     if (!bucket) continue;
 
     const multiplier = event.multiplier || 1;
+
+    /**
+     * Participation events (Fun Run, FUNEBALL) have no placing: a crew earns one
+     * gold per member who took part, and nothing else — no silver, no bronze, and
+     * no placement points, because there is no position to score. `count` carries
+     * the participants; the event weight multiplies it and is kept at 1, so the
+     * count is the golds. (Setting a weight above 1 would multiply every crew's
+     * golds, which is why it should stay 1.)
+     */
+    if (event.scoringType === "participation") {
+      const golds = (r.count ?? 0) * (event.medalWeight || 1);
+      if (golds === 0) continue;
+      const addGolds = (b: ScoreBreakdown): ScoreBreakdown => {
+        const next = { ...b, gold: b.gold + golds };
+        next.totalMedals = next.gold + next.silver + next.bronze;
+        next.medalPoints = round2(
+          next.gold * config.medalPoints.gold +
+            next.silver * config.medalPoints.silver +
+            next.bronze * config.medalPoints.bronze,
+        );
+        return next;
+      };
+      bucket.overall = addGolds(bucket.overall);
+      if (event.division === "sports") bucket.sports = addGolds(bucket.sports);
+      else bucket.cultural = addGolds(bucket.cultural);
+      continue;
+    }
+
     const points = placementToPoints(r.placement, config.defaultPlacementTable, multiplier);
     const medal = medalKindForPlacement(r.placement);
     const weight = event.medalWeight; // medals are physical counts → no multiplier

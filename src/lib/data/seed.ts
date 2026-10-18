@@ -44,6 +44,13 @@ interface EventSeed {
   division: "sports" | "cultural";
   verify?: boolean;
   note?: string;
+  /**
+   * Overrides the category-derived scoring type. Needed for participation events
+   * (FUN RUN, FUNEBALL): their category is "Special Event", which otherwise maps
+   * to a normal placement event, and a participation event scored as a placement
+   * would award nothing at all.
+   */
+  scoringType?: EventItem["scoringType"];
 }
 
 const SPORTS_SEEDS: EventSeed[] = [
@@ -104,8 +111,11 @@ const SPORTS_SEEDS: EventSeed[] = [
   { id: "rubiks-patterned", name: "Rubik's Cube Patterned (M/W)", category: "Mind Games", medalWeight: 2, gender: "M&W", division: "sports" },
   { id: "rubiks-standard", name: "Rubik's Cube Standard (M/W)", category: "Mind Games", medalWeight: 2, gender: "M&W", division: "sports" },
   // Special sports
-  { id: "fun-run", name: "FUN RUN", category: "Special Event", medalWeight: 50, gender: "Open", division: "sports" },
-  { id: "funeball", name: "FUNEBALL", category: "Special Event", medalWeight: 10, gender: "Open", division: "sports" },
+  // Participation events: no placing, so one gold per participant and a weight of
+  // 1 so the count IS the golds. They are exempt from the placement ladder
+  // entirely — they are not games or matches.
+  { id: "fun-run", name: "FUN RUN", category: "Special Event", medalWeight: 1, gender: "Open", division: "sports", scoringType: "participation" },
+  { id: "funeball", name: "FUNEBALL", category: "Special Event", medalWeight: 1, gender: "Open", division: "sports", scoringType: "participation" },
 ];
 
 const CULTURAL_SEEDS: EventSeed[] = [
@@ -177,7 +187,7 @@ export const EVENTS: EventItem[] = [...SPORTS_SEEDS, ...CULTURAL_SEEDS].map((s) 
   name: s.name,
   division: s.division,
   category: s.category,
-  scoringType: scoringTypeFor(s.category),
+  scoringType: s.scoringType ?? scoringTypeFor(s.category),
   medalWeight: s.medalWeight,
   gender: s.gender ?? "Open",
   multiplier: 1,

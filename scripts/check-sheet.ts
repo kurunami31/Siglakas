@@ -15,11 +15,13 @@ import { HEADERS, TABS } from "../src/lib/data/sheets-repo";
 
 const EXPECTED_EVENTS = 97;
 const EXPECTED_TEAMS = 12;
-// sports 324 + socio-cultural 160. Socio-cultural fell by 4 when the Live Band
-// Competition's medal weight was confirmed at 5 (it had been 9 from a manual whose
-// printed line and section sub-total disagreed). Changing an event's weight means
-// keeping the Guide text in beautify-sheet.ts and the docs in step too.
-const EXPECTED_MEDALS = 484;
+// sports 266 + socio-cultural 160. Two changes from the original manual figures:
+// Live Band's weight was confirmed at 5 (was 9), and FUN RUN / FUNEBALL became
+// participation events whose weight is 1 (they were 50 and 10), because their
+// golds now come from each crew's participant count rather than a fixed weight.
+// Changing an event's weight means keeping the Guide text in beautify-sheet.ts
+// and the docs in step too.
+const EXPECTED_MEDALS = 426;
 
 function loadEnvFiles() {
   const loader = (process as unknown as { loadEnvFile?: (p: string) => void }).loadEnvFile;

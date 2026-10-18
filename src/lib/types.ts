@@ -7,7 +7,7 @@
 
 export type Group = "faculty" | "extension_campus";
 export type Division = "sports" | "cultural";
-export type ScoringType = "placement" | "judged" | "match";
+export type ScoringType = "placement" | "judged" | "match" | "participation";
 export type ResultStatus = "draft" | "published";
 export type EventStatus = "upcoming" | "live" | "finished";
 export type MatchStatus = "scheduled" | "live" | "final";
@@ -95,6 +95,11 @@ export interface Result {
   status: ResultStatus;
   enteredBy: string;
   timestamp: string;
+  /**
+   * Participants, used only by `participation` events (Fun Run, FUNEBALL), where
+   * each participant earns one gold and there is no placing. Zero elsewhere.
+   */
+  count?: number;
 }
 
 export interface Announcement {

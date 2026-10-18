@@ -46,6 +46,8 @@ export function QuickResult() {
   }, [events, eventId]);
 
   const event: EventItem | undefined = state.events.find((e) => e.id === eventId);
+  /** Participation events take a participant count, not a placing. */
+  const isParticipation = event?.scoringType === "participation";
 
   // hydrate rows whenever the selected event changes
   useEffect(() => {
@@ -61,6 +63,9 @@ export function QuickResult() {
   }, [eventId]);
 
   const duplicates = useMemo(() => {
+    // Participation events store a COUNT in the placement field, so two crews
+    // with 5 participants would look like a duplicate placing. Skip entirely.
+    if (isParticipation) return [];
     const used = new Map<number, string[]>();
     for (const row of Object.values(rows)) {
       if (row.placement < 1 || row.tie) continue;
@@ -82,7 +87,12 @@ export function QuickResult() {
     const previous = state.results.filter((r) => r.eventId === event.id).map((r) => ({ ...r }));
     const payload = Object.values(rows)
       .filter((r) => r.placement > 0)
-      .map((r) => ({ teamId: r.teamId, placement: r.placement, tie: r.tie, status }));
+      .map((r) =>
+        isParticipation
+          ? // Participants, not a placing: the scorer turns each one into a gold.
+            { teamId: r.teamId, placement: 0, tie: false, count: r.placement, status }
+          : { teamId: r.teamId, placement: r.placement, tie: r.tie, status },
+      );
     const res = await postCommand({ type: "saveResults", eventId: event.id, rows: payload });
     setBusy(false);
     if (!res.ok) {
@@ -221,12 +231,14 @@ export function QuickResult() {
 
       <div className="panel overflow-hidden rounded-2xl">
         <table className="w-full text-sm">
-          <caption className="sr-only">Assign each crew a placement</caption>
+          <caption className="sr-only">
+            {isParticipation ? "Record each crew's participants" : "Assign each crew a placement"}
+          </caption>
           <thead>
             <tr className="border-b border-foam/20 bg-ink/50 text-left text-[0.68rem] uppercase tracking-wider text-foam/70">
               <th scope="col" className="px-3 py-2">Crew</th>
-              <th scope="col" className="px-3 py-2">Placement</th>
-              <th scope="col" className="px-3 py-2 text-center">Tie</th>
+              <th scope="col" className="px-3 py-2">{isParticipation ? "Participants" : "Placement"}</th>
+              <th scope="col" className="px-3 py-2 text-center">{isParticipation ? "—" : "Tie"}</th>
               <th scope="col" className="px-3 py-2">Award</th>
             </tr>
           </thead>
@@ -244,28 +256,48 @@ export function QuickResult() {
                     </span>
                   </th>
                   <td className="px-3 py-2">
-                    <select
-                      aria-label={`${team.shortName} placement`}
-                      disabled={locked}
-                      value={row.placement}
-                      onChange={(e) => setRows((p) => ({ ...p, [team.id]: { ...row, placement: Number(e.target.value) } }))}
-                      className="rounded-lg border border-foam/25 bg-ink/60 px-2 py-1.5 text-parchment disabled:opacity-50"
-                    >
-                      <option value={0}>— none —</option>
-                      {Array.from({ length: 12 }, (_, i) => i + 1).map((p) => (
-                        <option key={p} value={p}>{p}</option>
-                      ))}
-                    </select>
+                    {isParticipation ? (
+                      <input
+                        type="number"
+                        min={0}
+                        max={500}
+                        inputMode="numeric"
+                        aria-label={`${team.shortName} participants`}
+                        disabled={locked}
+                        value={row.placement}
+                        onChange={(e) =>
+                          setRows((p) => ({ ...p, [team.id]: { ...row, placement: Math.max(0, Number(e.target.value) || 0) } }))
+                        }
+                        className="w-24 rounded-lg border border-foam/25 bg-ink/60 px-2 py-1.5 text-parchment disabled:opacity-50"
+                      />
+                    ) : (
+                      <select
+                        aria-label={`${team.shortName} placement`}
+                        disabled={locked}
+                        value={row.placement}
+                        onChange={(e) => setRows((p) => ({ ...p, [team.id]: { ...row, placement: Number(e.target.value) } }))}
+                        className="rounded-lg border border-foam/25 bg-ink/60 px-2 py-1.5 text-parchment disabled:opacity-50"
+                      >
+                        <option value={0}>— none —</option>
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map((p) => (
+                          <option key={p} value={p}>{p}</option>
+                        ))}
+                      </select>
+                    )}
                   </td>
                   <td className="px-3 py-2 text-center">
-                    <input
-                      type="checkbox"
-                      className="size-6 shrink-0 accent-straw"
-                      disabled={locked}
-                      checked={row.tie}
-                      aria-label={`${team.shortName} declared tie`}
-                      onChange={(e) => setRows((p) => ({ ...p, [team.id]: { ...row, tie: e.target.checked } }))}
-                    />
+                    {isParticipation ? (
+                      <span className="text-xs text-foam/40">n/a</span>
+                    ) : (
+                      <input
+                        type="checkbox"
+                        className="size-6 shrink-0 accent-straw"
+                        disabled={locked}
+                        checked={row.tie}
+                        aria-label={`${team.shortName} declared tie`}
+                        onChange={(e) => setRows((p) => ({ ...p, [team.id]: { ...row, tie: e.target.checked } }))}
+                      />
+                    )}
                   </td>
                   <td className="px-3 py-2 text-xs">
                     {medal ? (
