@@ -8,6 +8,7 @@ import { can, type Permission } from "@/lib/auth/permissions";
 import { ROLE_SHORT } from "@/lib/auth/roles";
 import { auditResults, summariseIssues } from "@/lib/data/data-quality";
 import { useLive } from "@/components/providers";
+import { ChangePassword } from "./change-password";
 import { Icon, type IconName } from "@/components/icons";
 
 export interface AdminSession {
@@ -118,6 +119,7 @@ export function AdminShell({ session, children }: { session: AdminSession; child
           >
             {signingOut ? "Signing out…" : "Sign out"}
           </button>
+          <ChangePassword />
           <Link
             href="/"
             className="mt-1.5 flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-center text-xs text-foam/70 hover:text-parchment"
