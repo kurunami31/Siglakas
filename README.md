@@ -49,6 +49,8 @@ written anywhere. That is the fastest way to look around.
 | `npm run beautify-sheet` | Re-apply formatting, the Dashboard and the Guide tabs (`--dry-run` to preview) |
 | `npm run service-account-json` | Emit the key file as one line, for Vercel |
 | `npm run create-admin -- --list` | Accounts: list / bootstrap / reset / disable (Super Admin) |
+| `npm run backup-sheet` | Dump every raw tab to `backups/<date>/*.csv` (read-only) |
+| `npm run rehearse` | End-to-end write-path rehearsal against a running server |
 | `npm run optimize-logos` | Rebuild `public/logos/**` from `logos/source/**` |
 
 ---
@@ -197,6 +199,90 @@ Generate the single-line JSON with `npm run service-account-json`.
 ## Documentation
 
 - [`docs/sheet-template.md`](docs/sheet-template.md) — every tab, every column, who edits what.
+## Monitoring, backups and health
+
+The public UI shows a "reconnecting" pill when the sheet is unreachable — but nobody
+is watching that at 8am on day one. Two cheap safeguards close the gap:
+
+```bash
+npm run backup-sheet     # backups/<date>/*.csv — every raw tab, read-only
+```
+
+`backups/` is gitignored: it contains the password hashes. Run it nightly (Task
+Scheduler, a cron, or by hand) — Google's version history is otherwise the only
+restore path, and you do not want to discover that mid-festival.
+
+**Uptime monitoring.** `GET /api/health` returns **200** when the store is healthy
+and **503** when the sheet is unreachable:
+
+```json
+{ "ok": true, "kind": "sheets", "lastSyncedAt": "...", "version": "ejkt1p",
+  "teams": 12, "events": 97, "medalsAtStake": 488 }
+```
+
+Point a free monitor (Better Stack, UptimeRobot) or a Vercel cron at
+`https://<your-app>.vercel.app/api/health` and alert on anything that is not 200.
+Watching `medalsAtStake` also catches a silent data problem: it should read 488.
+
+## Performance (measured, not assumed)
+
+Lighthouse mobile on the production build (`npm run build && npm start`):
+
+| Category | Score |
+| --- | --- |
+| Performance | **81** |
+| Accessibility | 98 |
+| Best practices | 100 |
+| SEO | 100 |
+
+The Bounty Board started at **59**. Two fixes, both verified by re-measuring:
+
+1. **59 → 68** — the twelve leaderboard cards animated in from `opacity: 0`, so
+   nothing could paint until JS hydrated (FCP 1.1s but LCP 4.1s, Speed Index 5.7s).
+   The entrance is now scale-only: Speed Index fell to 4.0s.
+2. **68 → 81** — two `backdrop-filter` blurs were forcing real paint work:
+   `.panel`'s (twelve of them on that page, on a gradient that is already ~93%
+   opaque) and the sticky header's, which re-blurred on every scroll frame.
+   Total Blocking Time fell from 750ms to 300ms.
+
+**What is left to reach 90:** LCP is still 3.8s and Lighthouse reports **13 long
+tasks** — that is hydration JavaScript (951 KB across 28 chunks). The fix is
+`LazyMotion` with the `domAnimation` feature bundle, which requires dropping the
+`layout` animations on the leaderboard cards (they force the heavier `domMax`
+bundle), plus code-splitting the decorative client components (Ocean, Ticker,
+CrewParade). Expect the largest gain from that single change.
+
+## Supabase shared cache (designed, not yet implemented)
+
+Contained to `StateStore.ensureFresh`. One Postgres row holds the snapshot and a
+short advisory lease; whichever instance holds the lease polls Sheets, everyone
+else reads that row. This is simultaneously the **cross-instance half of the write
+race** (the single-instance half is already closed by the write queue) and the
+structural fix for Sheets load, since only the lease holder polls.
+
+```sql
+create table if not exists tally_snapshot (
+  id text primary key,
+  payload jsonb not null,
+  version text not null,
+  updated_at timestamptz not null default now(),
+  lease_owner text,
+  lease_expires_at timestamptz
+);
+alter table tally_snapshot enable row level security;  -- no policies: service_role only
+```
+
+RLS with **no policies** is deliberate: the anon key cannot touch the table at all,
+and only `service_role` (which bypasses RLS) can. Never use the anon key
+server-side for this — it is embedded in every page the browser receives.
+
+One decision to make before implementing: the cached payload is the full raw
+snapshot, which includes the bcrypt password hashes and the audit log. Caching it
+puts that data in two places; storing a hash-free projection of the state instead
+is the safer choice.
+
+## Docs
+
 - [`docs/pio-guide.md`](docs/pio-guide.md) — the PIO's day-of workflow.
 - [`docs/secretariat-guide.md`](docs/secretariat-guide.md) — the Secretariat's guide, including the rulebook.
 - [`docs/competition-day-checklist.md`](docs/competition-day-checklist.md) — the run-of-show checklist.

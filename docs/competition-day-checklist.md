@@ -11,6 +11,10 @@ Print this. Work top to bottom. Times are relative to the opening ceremony.
 - [ ] **Rotate the Super Admin password** and create one account per PIO/Secretariat
       member from **Admin → Accounts**. No shared logins.
 - [ ] **Run the health check** — `npm run check-sheet`. It must report no problems.
+- [ ] **Take a baseline backup** — `npm run backup-sheet`. Note that
+      `medalsAtStake` must read **488** on `/api/health`.
+- [ ] **Point a monitor at `/api/health`** and confirm it alerts on a 503. The
+      sheet connection is the one thing that fails silently otherwise.
 - [ ] **Re-apply the sheet styling** — `npm run beautify-sheet` (restores the
       `Dashboard` and `Guide` tabs).
 - [ ] **Rehearse once** — `npm run rehearse`. It enters a placement, publishes it,
