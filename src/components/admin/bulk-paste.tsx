@@ -40,6 +40,32 @@ export function BulkPaste({
     setMessage(`Sent ${entries.length} row${entries.length === 1 ? "" : "s"} to the grid — review them, then save.`);
   }
 
+  /**
+   * Read a chosen file straight into the textarea, so the preview, the
+   * validation and the "send to grid" step all run exactly as they do for a
+   * paste — nothing here writes to the sheet.
+   *
+   * CSV/TSV only, deliberately. Parsing .xlsx needs a spreadsheet library worth
+   * several hundred KB, and Excel exports CSV in two clicks.
+   */
+  async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2_000_000) {
+      setMessage("That file is over 2 MB — export just this event's rows, not the whole season.");
+      e.target.value = "";
+      return;
+    }
+    try {
+      setText(await file.text());
+      setMessage(`Read ${file.name} — check the rows below, then send them to the grid.`);
+    } catch {
+      setMessage("Could not read that file. In Excel use File → Save As → CSV UTF-8.");
+    }
+    // Let the same file be chosen again after an edit.
+    e.target.value = "";
+  }
+
   return (
     <div className="panel rounded-2xl">
       <button
@@ -49,7 +75,7 @@ export function BulkPaste({
         className="flex min-h-11 w-full items-center gap-2 p-4 text-left"
       >
         <Icon name="scroll" size={18} className="shrink-0 text-straw" />
-        <span className="font-display text-lg text-parchment">Bulk paste from Excel</span>
+        <span className="font-display text-lg text-parchment">Import from Excel or CSV</span>
         <span className="ml-auto text-xs text-foam/60">{open ? "Hide" : "Show"}</span>
         <Icon name={open ? "arrowUp" : "arrowDown"} size={16} className="shrink-0 text-foam/60" />
       </button>
@@ -63,6 +89,23 @@ export function BulkPaste({
             <span className="font-mono text-parchment">*</span> to a place to declare a tie (for example{" "}
             <span className="font-mono text-parchment">FBM 1*</span>).
           </p>
+
+          <label className="block">
+            <span className="mb-1 block text-xs uppercase tracking-wider text-foam/70">
+              Open a tally file (.csv or .tsv)
+            </span>
+            <input
+              type="file"
+              accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain"
+              disabled={locked}
+              onChange={onFile}
+              className="w-full cursor-pointer rounded-lg border border-foam/25 bg-ink/60 px-3 py-2 text-xs text-parchment file:mr-3 file:rounded-md file:border-0 file:bg-straw file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-ink disabled:opacity-50"
+            />
+            <span className="mt-1 block text-[0.7rem] text-foam/50">
+              An .xlsx will not open here — in Excel use <strong className="text-foam/70">File → Save As → CSV UTF-8</strong>,
+              or just copy the cells and paste below.
+            </span>
+          </label>
 
           <label className="block" htmlFor={textId}>
             <span className="mb-1 block text-xs uppercase tracking-wider text-foam/70">Paste here</span>
