@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, useReducedMotion } from "motion/react";
 import type { Team } from "@/lib/types";
 import { TeamBadge } from "./team-badge";
@@ -31,7 +32,13 @@ export function CrewParade({ teams }: { teams: Team[] }) {
 
   if (phase !== "playing") return null;
 
-  return (
+  // Rendered into <body> on purpose. `position: fixed` resolves against the
+  // nearest ancestor that carries a transform, and the animated wrappers up the
+  // tree set one — so `inset-0` sized this overlay to the content column rather
+  // than the viewport (measured 1101px tall against a 900px viewport), leaving a
+  // band at the bottom of the screen undimmed. A portal guarantees inset-0 means
+  // the real viewport.
+  return createPortal(
     <div
       role="dialog"
       aria-label="Crew parade introduction"
@@ -96,6 +103,7 @@ export function CrewParade({ teams }: { teams: Team[] }) {
           <path fill="currentColor" d="M0,60 C300,110 500,10 800,55 C1100,100 1300,20 1600,60 C1900,100 2100,25 2400,60 L2400,120 L0,120 Z" />
         </svg>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

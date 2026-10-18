@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
+import { Pirata_One, Bangers, Inter } from "next/font/google";
 import "./globals.css";
 import { LiveProvider } from "@/components/providers";
 import { Ocean } from "@/components/ocean";
@@ -8,6 +9,20 @@ import { Ticker } from "@/components/ticker";
 import { Icon } from "@/components/icons";
 import { getViewerState } from "@/lib/server-state";
 import { getSession } from "@/lib/auth/server";
+
+/**
+ * Fonts are self-hosted by next/font rather than pulled from
+ * fonts.googleapis.com at runtime. That removes a render-blocking third-party
+ * request (the biggest LCP cost on the page), eliminates the flash of unstyled
+ * display text, and means the site keeps its typography even if Google is
+ * unreachable from the venue network.
+ *
+ * The variables are namespaced `glt-*` so they cannot collide with the
+ * `--font-*` design tokens in globals.css, which now reference them.
+ */
+const display = Pirata_One({ weight: "400", subsets: ["latin"], variable: "--glt-display", display: "swap" });
+const stencil = Bangers({ weight: "400", subsets: ["latin"], variable: "--glt-stencil", display: "swap" });
+const body = Inter({ subsets: ["latin"], variable: "--glt-body", display: "swap" });
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -45,15 +60,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const session = await getSession();
 
   return (
-    <html lang="en">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Pirata+One&family=Bangers&family=Inter:wght@400;500;600;700&display=swap"
-        />
-      </head>
+    <html lang="en" className={`${display.variable} ${stencil.variable} ${body.variable}`}>
       <body>
         <a href="#main" className="sr-only sr-only-focusable print:hidden">
           Skip to content
