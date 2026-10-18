@@ -703,7 +703,7 @@ async function main() {
   g(26, 0, "HOW A CREW WINS");
   const win = [
     "Every published placement earns medals equal to that event's medal_weight: 1st = gold, 2nd = silver, 3rd = bronze. 4th place and below earn nothing.",
-    "Sports (324 medals across 53 events) and socio-cultural (164 medals across 44 events) both count towards one Overall Championship, so 488 medals are at stake in total.",
+    "Sports (324 medals across 53 events) and socio-cultural (160 medals across 44 events) both count towards one Overall Championship, so 484 medals are at stake in total.",
     "Judged events are scored by their criteria; match events are decided by the bracket; the rest are decided by the placement you enter.",
     "Drafts let the PIO check a result before the public sees it. Nothing counts until it is Published.",
   ];

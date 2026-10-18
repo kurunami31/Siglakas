@@ -284,10 +284,10 @@ describe("seed catalogue integrity", () => {
     expect(teams.filter((t) => t.group === "extension_campus")).toHaveLength(5);
   });
 
-  it("has the full 97-event catalogue totalling 488 medals per colour", () => {
+  it("has the full 97-event catalogue totalling 484 medals per colour", () => {
     expect(EVENTS).toHaveLength(97);
     const total = EVENTS.reduce((sum, e) => sum + e.medalWeight, 0);
-    expect(total).toBe(488);
+    expect(total).toBe(484);
   });
 
   it("matches the printed section subtotals", () => {
@@ -299,18 +299,22 @@ describe("seed catalogue integrity", () => {
     expect(sum("Traditional Games")).toBe(18);
     expect(sum("Mind Games")).toBe(8);
     expect(sum("Visual Arts")).toBe(5);
-    expect(sum("Music Arts")).toBe(43);
+    // 39, NOT the manual's printed 43. Live Band was confirmed at 5 (the printed
+    // line), while this section's sub-total of 43 only reconciles with 9. So the
+    // catalogue now deliberately disagrees with the manual's own arithmetic by 4.
+    // This is a recorded decision, not an oversight.
+    expect(sum("Music Arts")).toBe(39);
     expect(sum("Dance Arts")).toBe(46);
     expect(sum("Dramatic Arts")).toBe(19);
     expect(sum("Literary Arts")).toBe(13);
     expect(sum("Special Category")).toBe(38);
   });
 
-  it("splits 324 sports / 164 cultural", () => {
+  it("splits 324 sports / 160 cultural", () => {
     const sports = EVENTS.filter((e) => e.division === "sports").reduce((s, e) => s + e.medalWeight, 0);
     const cultural = EVENTS.filter((e) => e.division === "cultural").reduce((s, e) => s + e.medalWeight, 0);
     expect(sports).toBe(324);
-    expect(cultural).toBe(164);
+    expect(cultural).toBe(160);
   });
 
   it("gives every judged event weighted criteria", () => {
@@ -323,10 +327,11 @@ describe("seed catalogue integrity", () => {
     }
   });
 
-  it("flags the remaining weight discrepancy for verification", () => {
-    // Pandalawahang Pag-Arte was resolved from the manual (2, not 5);
-    // Live Band still disagrees with its own printed sub-total.
-    const flagged = EVENTS.filter((e) => e.verify).map((e) => e.id).sort();
-    expect(flagged).toEqual(["live-band"]);
+  it("has no unresolved weight discrepancies left", () => {
+    // Live Band was the last one open: the manual printed 5 for it while its
+    // Music Arts sub-total only closed with 9. OSCAL confirmed the printed line,
+    // so nothing is left flagged — and the Music Arts expectation above now reads
+    // 39 rather than the manual's 43, which is the arithmetic consequence.
+    expect(EVENTS.filter((e) => e.verify)).toEqual([]);
   });
 });

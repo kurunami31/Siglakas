@@ -121,7 +121,9 @@ const CULTURAL_SEEDS: EventSeed[] = [
   { id: "violin", name: "Violin", category: "Music Arts", medalWeight: 1, division: "cultural" },
   { id: "classical-guitar", name: "Classical Guitar", category: "Music Arts", medalWeight: 1, division: "cultural" },
   { id: "bandurria", name: "Banduria", category: "Music Arts", medalWeight: 1, division: "cultural" },
-  { id: "live-band", name: "Live Band Competition", category: "Music Arts", medalWeight: 9, division: "cultural", verify: true, note: "The printed line reads 5, but the manual's Music Arts sub-total of 43 only adds up with 9. Please confirm with OSCAL." },
+  // Confirmed with OSCAL: 5. The manual's printed line and its Music Arts
+  // sub-total disagreed; the printed line was the correct one.
+  { id: "live-band", name: "Live Band Competition", category: "Music Arts", medalWeight: 5, division: "cultural" },
   { id: "vocal-solo-kundiman", name: "Vocal Solo (Kundiman)", category: "Music Arts", medalWeight: 1, division: "cultural" },
   { id: "vocal-duet", name: "Vocal Duet", category: "Music Arts", medalWeight: 2, division: "cultural" },
   { id: "pop-solo", name: "Pop Solo", category: "Music Arts", medalWeight: 1, division: "cultural" },

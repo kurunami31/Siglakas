@@ -15,7 +15,11 @@ import { HEADERS, TABS } from "../src/lib/data/sheets-repo";
 
 const EXPECTED_EVENTS = 97;
 const EXPECTED_TEAMS = 12;
-const EXPECTED_MEDALS = 488; // sports 324 + socio-cultural 164
+// sports 324 + socio-cultural 160. Socio-cultural fell by 4 when the Live Band
+// Competition's medal weight was confirmed at 5 (it had been 9 from a manual whose
+// printed line and section sub-total disagreed). Changing an event's weight means
+// keeping the Guide text in beautify-sheet.ts and the docs in step too.
+const EXPECTED_MEDALS = 484;
 
 function loadEnvFiles() {
   const loader = (process as unknown as { loadEnvFile?: (p: string) => void }).loadEnvFile;
@@ -78,8 +82,15 @@ async function main() {
   const dupes = events.length - new Set(events.map((e) => e.id)).size;
   if (dupes) problems.push(`Events: ${dupes} duplicate event id(s)`);
   const medals = events.reduce((s, e) => s + Number(e.medal_weight || 0), 0);
+  // A WARNING, not a problem. This figure legitimately changes whenever the
+  // Secretariat confirms an event weight, so failing the gate on it produced
+  // false alarms — but it is still worth surfacing, because a silently truncated
+  // Events tab would show up here as a collapse in the total.
   if (medals !== EXPECTED_MEDALS) {
-    problems.push(`Events: medal total is ${medals}, expected ${EXPECTED_MEDALS}`);
+    warnings.push(
+      `Events: medal total is ${medals}; the documented figure is ${EXPECTED_MEDALS}. ` +
+        "If a weight changed deliberately, update EXPECTED_MEDALS and the docs.",
+    );
   }
 
   // teams

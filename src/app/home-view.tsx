@@ -21,7 +21,7 @@ export function HomeView() {
 
       <section className="grid gap-3 sm:grid-cols-3">
         <StatCard label="Islands" value={state.events.length} icon="map" />
-        <StatCard label="Medals at stake" value={state.events.reduce((s, e) => s + e.medalWeight, 0) * 3} icon="medal" />
+        <StatCard label="Medals at stake" value={state.events.reduce((s, e) => s + e.medalWeight, 0)} icon="medal" />
         <StatCard label="Crews" value={state.teams.length} icon="flag" />
       </section>
 
