@@ -23,8 +23,11 @@ export function SiteHeader() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
+  // `bg-ink/95` rather than a backdrop blur: this header is sticky, so a
+  // backdrop-filter would repaint the blurred layer on every scroll frame. The
+  // tint is near-opaque anyway, so the visual difference is negligible.
   return (
-    <header className="sticky top-0 z-40 border-b border-foam/15 bg-ink/80 backdrop-blur-md print:hidden">
+    <header className="sticky top-0 z-40 border-b border-foam/15 bg-ink/95 print:hidden">
       <div className="mx-auto flex max-w-7xl items-center gap-3 px-3 py-2 sm:px-5">
         <Link href="/welcome" className="flex min-w-0 items-center gap-2.5">
           <Image

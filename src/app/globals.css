@@ -147,7 +147,10 @@ body {
   background: linear-gradient(180deg, rgba(18, 51, 83, 0.92), rgba(9, 26, 44, 0.94));
   border: 1px solid rgba(143, 214, 239, 0.18);
   box-shadow: 0 14px 34px -20px rgba(0, 0, 0, 0.9);
-  backdrop-filter: blur(6px);
+  /* No backdrop-filter here on purpose. The gradient is already 92-94% opaque,
+     so the blur was contributing almost nothing visually while costing a real
+     paint pass on every panel — and the Bounty Board renders twelve of them.
+     Lighthouse attributed ~1.2s to paint/layout on that page. */
 }
 
 .panel-hover {
