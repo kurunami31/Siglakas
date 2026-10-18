@@ -16,10 +16,13 @@ import { Icon, MedalIcon } from "@/components/icons";
 export function BulkPaste({
   teams,
   locked,
+  participation = false,
   onApply,
 }: {
   teams: Team[];
   locked: boolean;
+  /** Participation events paste a headcount, not a placing. */
+  participation?: boolean;
   onApply: (entries: BulkEntry[]) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -31,7 +34,15 @@ export function BulkPaste({
     () => teams.map((t) => ({ id: t.id, shortName: t.shortName, name: t.name, mascot: t.mascot })),
     [teams],
   );
-  const parsed = useMemo(() => parseBulkResults(text, lite), [text, lite]);
+  const parsed = useMemo(
+    () =>
+      parseBulkResults(
+        text,
+        lite,
+        participation ? { maxPlacement: 500, allowDuplicates: true } : undefined,
+      ),
+    [text, lite, participation],
+  );
   const byId = useMemo(() => new Map(teams.map((t) => [t.id, t])), [teams]);
   const entries = useMemo(() => toEntries(parsed.rows), [parsed.rows]);
 

@@ -79,7 +79,10 @@ function readPlacement(raw: string): PlacementToken | null {
   if (!digits) return null;
 
   const placement = Number(digits[0]);
-  if (!Number.isInteger(placement) || placement < 0 || placement > 30) return null;
+  // Generous ceiling: this helper is shared by placements and participation
+  // COUNTS, and a headcount can be in the tens. The per-call limit is applied by
+  // the caller, which knows which of the two it is parsing.
+  if (!Number.isInteger(placement) || placement < 0 || placement > 500) return null;
   return { placement, tie: tie && placement > 0, measured: true };
 }
 
@@ -87,7 +90,11 @@ function readPlacement(raw: string): PlacementToken | null {
  * Parse a pasted block. Accepts `crew<TAB>place` and `place<TAB>crew` in any
  * order, separated by tabs, commas, double spaces or a single space.
  */
-export function parseBulkResults(text: string, teams: TeamLite[]): ParseSummary {
+export function parseBulkResults(
+  text: string,
+  teams: TeamLite[],
+  opts: { maxPlacement?: number; allowDuplicates?: boolean } = {},
+): ParseSummary {
   const lookup = new Map<string, string[]>();
   const add = (key: string, id: string) => {
     const k = norm(key);
@@ -193,24 +200,39 @@ export function parseBulkResults(text: string, teams: TeamLite[]): ParseSummary 
     });
   });
 
-  const ok = rows.filter((r) => !r.error);
-
-  // The grid only allows one crew per placement unless a tie is declared, so
-  // surface clashes here instead of letting the save silently overwrite.
-  const seen = new Map<number, ParsedRow>();
-  for (const r of ok) {
-    if (r.placement < 1 || r.tie) continue;
-    const first = seen.get(r.placement);
-    if (first) {
-      const msg = `Placement ${r.placement} is used twice (line ${first.line} and line ${r.line}) — mark one as a tie.`;
-      if (!first.error) first.error = msg;
-      r.error = msg;
-    } else {
-      seen.set(r.placement, r);
+  // Range check first. A placing only goes to 12, but a participation COUNT is a
+  // headcount and legitimately runs higher, so the ceiling is per-call: passing
+  // the placement limit here is what stops a stray "100" becoming a placing.
+  const maxPlacement = opts.maxPlacement ?? 30;
+  for (const r of rows) {
+    if (!r.error && r.placement > maxPlacement) {
+      r.error = `${r.placement} is out of range (maximum ${maxPlacement}).`;
     }
   }
 
-  return { rows, ok, problems: rows.filter((r) => r.error) };
+  const ok = rows.filter((r) => !r.error);
+
+  // The grid only allows one crew per placement unless a tie is declared, so
+  // surface clashes here instead of letting the save silently overwrite. Skipped
+  // for participation events, where two crews sharing a headcount is normal and
+  // would otherwise be reported as a clash.
+  if (!opts.allowDuplicates) {
+    const seen = new Map<number, ParsedRow>();
+    for (const r of ok) {
+      if (r.placement < 1 || r.tie) continue;
+      const first = seen.get(r.placement);
+      if (first) {
+        const msg = `Placement ${r.placement} is used twice (line ${first.line} and line ${r.line}) — mark one as a tie.`;
+        if (!first.error) first.error = msg;
+        r.error = msg;
+      } else {
+        seen.set(r.placement, r);
+      }
+    }
+  }
+
+  // Recompute: the duplicate pass above may have added errors.
+  return { rows, ok: rows.filter((r) => !r.error), problems: rows.filter((r) => r.error) };
 }
 
 export interface BulkEntry {

@@ -79,7 +79,10 @@ describe("parseBulkResults — placements", () => {
   it("flags a placement outside the allowed range", () => {
     const { problems } = parseBulkResults("FBM\t99", teams);
     expect(problems).toHaveLength(1);
-    expect(problems[0].error).toMatch(/Could not read a placement/);
+    // Used to be the vaguer "Could not read a placement", because the parser
+    // silently rejected anything over 30. It now says which value and which
+    // ceiling, which is what the person pasting actually needs to know.
+    expect(problems[0].error).toMatch(/out of range/);
   });
 
   it("flags a line with no placement at all", () => {

@@ -56,7 +56,14 @@ export function QuickResult() {
     const next: Record<string, Row> = {};
     for (const team of state.teams) {
       const r = existing.get(team.id);
-      next[team.id] = { teamId: team.id, placement: r?.placement ?? 0, tie: r?.tie ?? false };
+      // Participation events keep the headcount in `count` and leave placement at
+      // 0, so hydrating from `placement` alone showed 0 — and saving would then
+      // write that 0 back, destroying the count. Read the right field per event.
+      next[team.id] = {
+        teamId: team.id,
+        placement: isParticipation ? (r?.count ?? 0) : (r?.placement ?? 0),
+        tie: r?.tie ?? false,
+      };
     }
     setRows(next);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -227,7 +234,12 @@ export function QuickResult() {
         )}
       </div>
 
-      <BulkPaste teams={state.teams} locked={Boolean(locked)} onApply={applyBulk} />
+      <BulkPaste
+        teams={state.teams}
+        locked={Boolean(locked)}
+        participation={Boolean(isParticipation)}
+        onApply={applyBulk}
+      />
 
       <div className="panel overflow-hidden rounded-2xl">
         <table className="w-full text-sm">
