@@ -240,7 +240,7 @@ export function IslandCard({
 
       <div className="mt-2.5 flex items-center gap-2 text-[0.7rem] text-foam/75">
         <span className="inline-flex items-center gap-1 rounded bg-ink/60 px-1.5 py-0.5">
-          <Icon name="medal" size={12} /> {event.medalWeight} medals
+          <Icon name="medal" size={12} /> {event.medalWeight} {event.medalWeight === 1 ? "medal" : "medals"}
         </span>
         {event.multiplier !== 1 && <span className="rounded bg-straw/20 px-1.5 py-0.5 text-straw">{event.multiplier}× </span>}
         {event.locked && (
@@ -312,7 +312,7 @@ export function EventDetailView({ eventId }: { eventId: string }) {
         <div className="mt-2 flex flex-wrap gap-2 text-xs">
           <Badge>{event.division === "sports" ? t.sports : t.cultural}</Badge>
           <Badge>{event.scoringType === "match" ? "Match-based" : event.scoringType === "judged" ? "Judged" : "Placement"}</Badge>
-          <Badge><span className="inline-flex items-center gap-1"><Icon name="medal" size={13} /> {event.medalWeight} medals</span></Badge>
+          <Badge><span className="inline-flex items-center gap-1"><Icon name="medal" size={13} /> {event.medalWeight} {event.medalWeight === 1 ? "medal" : "medals"}</span></Badge>
           <Badge>{event.gender}</Badge>
           {event.schedule && <Badge><span className="inline-flex items-center gap-1"><Icon name="calendar" size={13} /> {event.schedule}</span></Badge>}
           {event.venue && <Badge><span className="inline-flex items-center gap-1"><Icon name="pin" size={13} /> {event.venue}</span></Badge>}
@@ -414,6 +414,10 @@ export function EventDetailView({ eventId }: { eventId: string }) {
               <>
                 <Icon name="mask" size={20} className="text-sunset" /> Final Rankings
               </>
+            ) : event.scoringType === "participation" ? (
+              <>
+                <Icon name="medal" size={20} className="text-straw" /> Gold medals
+              </>
             ) : (
               <>
                 <Icon name="chart" size={20} className="text-teal" /> Results
@@ -421,18 +425,48 @@ export function EventDetailView({ eventId }: { eventId: string }) {
             )}
           </h2>
           {detail.placementRows.length === 0 && detail.judged.length === 0 ? (
-            <p className="text-sm italic text-foam/60">Results have not been published yet.</p>
+            <p className="text-sm italic text-foam/60">
+              {event.scoringType === "participation"
+                ? "No participants have been entered yet."
+                : "Results have not been published yet."}
+            </p>
           ) : (
             <ol className="space-y-2">
               {(detail.placementRows.length > 0
-                ? detail.placementRows.map((r) => ({ teamId: r.teamId, placement: r.placement, medal: r.medal }))
-                : detail.judged.map((j) => ({ teamId: j.teamId, placement: j.rank, medal: j.rank <= 3 ? (["gold", "silver", "bronze"] as const)[j.rank - 1] : null }))
+                ? detail.placementRows.map((r) => ({
+                    teamId: r.teamId,
+                    placement: r.placement,
+                    medal: r.medal,
+                    count: r.count,
+                    golds: r.golds,
+                  }))
+                : detail.judged.map((j) => ({
+                    teamId: j.teamId,
+                    placement: j.rank,
+                    medal: j.rank <= 3 ? (["gold", "silver", "bronze"] as const)[j.rank - 1] : null,
+                    count: undefined,
+                    golds: undefined,
+                  }))
               ).map((row) => {
                 const team = byId.get(row.teamId);
                 if (!team) return null;
+                const participation = event.scoringType === "participation";
+                const count = row.count ?? 0;
                 return (
                   <li key={row.teamId} className="flex items-center gap-3 rounded-xl border border-foam/15 bg-ink/40 p-2">
-                    <span className="font-display w-7 text-center text-xl">{row.placement}</span>
+                    <span className="font-display w-7 text-center text-xl">
+                      {participation ? (
+                        (row.golds ?? 0)
+                      ) : row.placement > 0 ? (
+                        row.placement
+                      ) : (
+                        // Placement 0 is "competed but did not place" — the `-` the
+                        // PIO guide uses. Printing a bare 0 reads like a rank.
+                        <abbr title="Competed, not placed" className="text-foam/60 no-underline">
+                          –
+                        </abbr>
+                      )}
+                    </span>
                     {row.medal ? (
                       <MedalIcon kind={row.medal} size={16} />
                     ) : (
@@ -441,7 +475,12 @@ export function EventDetailView({ eventId }: { eventId: string }) {
                     <TeamBadge team={team} size={30} shape="square" />
                     <span className="min-w-0">
                       <span className="block truncate font-semibold">{team.name}</span>
-                      <span className="block text-[0.68rem] text-foam/70">The {team.mascot}</span>
+                      <span className="block text-[0.68rem] text-foam/70">
+                        The {team.mascot}
+                        {participation && row.golds !== count
+                          ? ` · ${count} participant${count === 1 ? "" : "s"}`
+                          : ""}
+                      </span>
                     </span>
                   </li>
                 );
@@ -451,6 +490,12 @@ export function EventDetailView({ eventId }: { eventId: string }) {
           {event.scoringType === "judged" && (
             <p className="mt-3 text-[0.68rem] text-foam/60">
               Individual judge scores are kept private to the panel; only the weighted final ranking is published.
+            </p>
+          )}
+          {event.scoringType === "participation" && (
+            <p className="mt-3 text-[0.68rem] text-foam/60">
+              Every participant earns one gold medal. There are no placings, so this event counts towards the medal
+              board but adds no placement points.
             </p>
           )}
         </section>

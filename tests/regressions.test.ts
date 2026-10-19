@@ -2,8 +2,12 @@ import { describe, expect, it } from "vitest";
 import { toPublicState, toViewerState } from "@/lib/serialize";
 import { auditPayload } from "@/lib/data/audit-payload";
 import { deriveState } from "@/lib/data/derive";
+import { DemoRepository } from "@/lib/data/demo-repo";
+import { DEFAULT_CONFIG, EVENTS, TEAMS, generateDemoData } from "@/lib/data/seed";
+import { buildEventDetail, buildEventSummaries } from "@/lib/scoring/events";
+import { mergeMatchPlacements } from "@/lib/scoring/match";
 import type { Command } from "@/lib/data/repo";
-import type { CompetitionState, RawSheets, Result } from "@/lib/types";
+import type { CompetitionState, Criterion, EventItem, JudgeScore, RawSheets, Result, Team } from "@/lib/types";
 
 /**
  * Regression coverage for bugs found and fixed during the SIGLAKAS build. Each
@@ -203,5 +207,160 @@ describe("participation events", () => {
     const raw = rawFor(7);
     (raw as unknown as { results: Result[] }).results[0].status = "draft";
     expect(deriveState(raw).standings.find((s) => s.teamId === "a")!.overall.totalMedals).toBe(0);
+  });
+
+  it("reports golds on the event page instead of a phantom placing", () => {
+    // Was: placement 0, no medal and one placement point per crew — the event
+    // page disagreed with the medal board, which showed seven golds.
+    const state = deriveState(rawFor(7));
+    const summary = buildEventSummaries(state.events, state.results, state.config)[0]!;
+    const row = summary.rows.find((r) => r.teamId === "a")!;
+    expect(row.placement).toBe(0);
+    expect(row.points).toBe(0);
+    expect(row.medal).toBe("gold");
+    expect(row.count).toBe(7);
+    expect(row.golds).toBe(7);
+  });
+
+  it("keeps the event page and the medal board in step at any weight", () => {
+    const state = deriveState(rawFor(7, 2));
+    const summary = buildEventSummaries(state.events, state.results, state.config)[0]!;
+    const shown = summary.rows.reduce((n, r) => n + (r.golds ?? 0), 0);
+    expect(shown).toBe(state.standings.find((s) => s.teamId === "a")!.overall.gold);
+  });
+
+  it("does not award a participation crew a medal it did not earn", () => {
+    const state = deriveState(rawFor(0));
+    const summary = buildEventSummaries(state.events, state.results, state.config)[0]!;
+    const row = summary.rows.find((r) => r.teamId === "a")!;
+    expect(row.golds).toBe(0);
+    expect(row.medal).toBeNull();
+    expect(row.points).toBe(0);
+  });
+
+  it("leaves placing events on the placement table", () => {
+    const raw = rawFor(7) as unknown as RawSheets & { events: Array<{ scoringType: string }> };
+    raw.events[0].scoringType = "placement";
+    (raw as unknown as { results: Result[] }).results[0].placement = 1;
+    const state = deriveState(raw);
+    const summary = buildEventSummaries(state.events, state.results, state.config)[0]!;
+    const row = summary.rows.find((r) => r.teamId === "a")!;
+    expect(row.placement).toBe(1);
+    expect(row.medal).toBe("gold");
+    expect(row.points).toBe(10);
+    expect(row.golds).toBeUndefined();
+    expect(row.count).toBeUndefined();
+  });
+});
+
+describe("demo data", () => {
+  it("enters headcounts for participation events, not invented placings", () => {
+    // The generator used to fall through to the placement branch for FUN RUN and
+    // FUNEBALL, which produced medallists nobody could have earned because the
+    // board only ever counts `count` golds.
+    const { results } = generateDemoData(EVENTS, TEAMS, []);
+    const participation = new Set(
+      EVENTS.filter((e) => e.scoringType === "participation").map((e) => e.id),
+    );
+    expect(participation.size).toBe(2);
+
+    const rows = results.filter((r) => participation.has(r.eventId));
+    expect(rows.length).toBeGreaterThan(0);
+    for (const r of rows) {
+      expect(r.placement).toBe(0);
+      expect(r.count ?? 0).toBeGreaterThan(0);
+    }
+    // Every crew fields somebody, so they all pick up at least one gold.
+    expect(new Set(rows.map((r) => r.teamId)).size).toBe(TEAMS.length);
+  });
+
+  /**
+   * The event pages and the medal board are computed by two different modules
+   * (`events.ts` and `rank.ts`) from the same rows. They must never disagree:
+   * that divergence is exactly what the FUN RUN bug was. This walks the whole
+   * demo festival — 97 events, every scoring type — and compares the golds each
+   * row displays against the golds the board credits, crew by crew.
+   */
+  it("the event pages and the medal board agree across the whole festival", async () => {
+    const raw = await new DemoRepository().read();
+    const state = deriveState(raw);
+    const board = new Map(state.standings.map((s) => [s.teamId, s.overall.gold]));
+
+    const merged = mergeMatchPlacements(raw.results, raw.events, raw.matches);
+    const pages = new Map<string, number>();
+    for (const { event, rows } of buildEventSummaries(raw.events, merged, state.config)) {
+      for (const r of rows) {
+        if (r.status !== "published") continue;
+        const golds =
+          event.scoringType === "participation"
+            ? (r.golds ?? 0)
+            : r.medal === "gold"
+              ? event.medalWeight
+              : 0;
+        pages.set(r.teamId, (pages.get(r.teamId) ?? 0) + golds);
+      }
+    }
+
+    for (const team of state.teams) {
+      expect(pages.get(team.id) ?? 0, `${team.id} golds`).toBe(board.get(team.id) ?? 0);
+    }
+  });
+});
+
+describe("judged events", () => {
+  const crew = (id: string, name: string): Team => ({
+    id,
+    name,
+    shortName: id.toUpperCase(),
+    group: "faculty",
+    color: "#123456",
+    logoFile: id,
+    mascot: `${name} mascot`,
+  });
+  const crews = [crew("a", "Crew A"), crew("b", "Crew B"), crew("c", "Crew C")];
+  const posterEvent: EventItem = {
+    id: "e1",
+    name: "On the Spot Poster Making",
+    division: "cultural",
+    category: "Visual Arts",
+    scoringType: "judged",
+    medalWeight: 1,
+    gender: "Open",
+    multiplier: 1,
+    status: "upcoming",
+    locked: false,
+  };
+  const criteria: Criterion[] = [{ eventId: "e1", criterion: "Creativity", weight: 50, order: 1 }];
+  const detail = (scores: JudgeScore[]) =>
+    buildEventDetail(posterEvent, crews, [], [], scores, criteria, "first_criterion", DEFAULT_CONFIG);
+
+  it("publishes no ranking before anyone has scored", () => {
+    // Was: all three crews ranked 1st-3rd off a board of zeroes, with gold,
+    // silver and bronze icons beside the first three alphabetically — on the
+    // live site, before a single judge had scored.
+    expect(detail([]).judged).toEqual([]);
+  });
+
+  it("ranks only the crews the panel has actually scored", () => {
+    const scores: JudgeScore[] = [
+      { eventId: "e1", teamId: "b", judge: "Judge A", criterion: "Creativity", score: 91 },
+    ];
+    const judged = detail(scores).judged;
+    expect(judged.map((j) => j.teamId)).toEqual(["b"]);
+    expect(judged[0].rank).toBe(1);
+    expect(judged[0].finalScore).toBe(91);
+  });
+
+  it("still ranks every crew once they all have scores", () => {
+    const scores: JudgeScore[] = [
+      { eventId: "e1", teamId: "a", judge: "Judge A", criterion: "Creativity", score: 80 },
+      { eventId: "e1", teamId: "b", judge: "Judge A", criterion: "Creativity", score: 95 },
+      { eventId: "e1", teamId: "c", judge: "Judge A", criterion: "Creativity", score: 88 },
+    ];
+    expect(detail(scores).judged.map((j) => [j.teamId, j.rank])).toEqual([
+      ["b", 1],
+      ["c", 2],
+      ["a", 3],
+    ]);
   });
 });

@@ -399,6 +399,23 @@ export function generateDemoData(
   const finishRatio = 0.42;
 
   for (const event of events) {
+    /**
+     * Participation events (FUN RUN, FUNEBALL) have no placings, no bracket and
+     * no round to draw — the secretariat enters a headcount once, after the
+     * event, and a crew earns one gold per entrant. Generating placings for them,
+     * which is what the fall-through below used to do, invented results nobody
+     * could have earned: the board counts `count` golds, so every one of those
+     * rows scored nothing.
+     */
+    if (event.scoringType === "participation") {
+      for (const id of ranked()) {
+        const strength = DEMO_STRENGTH[id] ?? 0.5;
+        const count = Math.max(1, Math.round(1 + strength * 6 + (rng() - 0.5) * 4));
+        results.push({ ...mkResult(event.id, id, 0, "published"), count });
+      }
+      continue;
+    }
+
     const done = rng() < finishRatio;
     const live = !done && rng() < 0.12;
     if (!done && !live) continue;
