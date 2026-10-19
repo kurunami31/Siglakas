@@ -57,7 +57,7 @@ Doing a dozen crews by hand is fine. Doing forty is not. Use **Bulk paste from E
    ```
 
    Tab, comma or spaces all work, in either order (`1 FBM` is fine). Full faculty
-   names and mascots work too (`The Yellow Eagle 2`).
+   names and mascots work too (`The Griffins 2`).
 2. Use `-` for "competed but not placed" and add `*` to a placement to declare a tie
    (`FBM 1*`).
 3. Read the preview. Each line shows what it was understood as; anything it couldn't

@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import type { Team } from "@/lib/types";
-import { hexToRgbTriplet, prefersDarkText } from "@/lib/format";
+import { accentFor, hexToRgbTriplet, prefersDarkText } from "@/lib/format";
 
 interface TeamBadgeProps {
   team: Team;
@@ -33,7 +33,8 @@ export function TeamBadge({
   const src = team.logoUrl || `/logos/${team.logoFile}/256.webp`;
   const radius = shape === "circle" ? "9999px" : `${Math.round(size * 0.22)}px`;
   const initials = team.shortName.slice(0, 4);
-  const dark = prefersDarkText(team.color);
+  const accent = accentFor(team.color);
+  const dark = prefersDarkText(accent);
 
   return (
     <span
@@ -42,9 +43,9 @@ export function TeamBadge({
         width: size,
         height: size,
         borderRadius: radius,
-        background: `rgb(${hexToRgbTriplet(team.color)} / 0.22)`,
-        border: `2px solid ${team.color}`,
-        boxShadow: `0 0 0 3px rgba(7,20,38,0.55), 0 0 ${Math.round(size / 4)}px -6px ${team.color}`,
+        background: `rgb(${hexToRgbTriplet(accent)} / 0.22)`,
+        border: `2px solid ${accent}`,
+        boxShadow: `0 0 0 3px rgba(7,20,38,0.55), 0 0 ${Math.round(size / 4)}px -6px ${accent}`,
       }}
       title={`${team.name} — ${team.mascot}`}
     >

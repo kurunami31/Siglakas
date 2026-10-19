@@ -9,8 +9,8 @@ import { parseBulkResults } from "@/lib/bulk-parse";
  */
 
 const teams = [
-  { id: "fted", shortName: "FTED", name: "Faculty of Teacher Education", mascot: "Blue Phoenix" },
-  { id: "facet", shortName: "FACET", name: "Faculty of Computing", mascot: "Orange Stallion" },
+  { id: "fted", shortName: "FTED", name: "Faculty of Teacher Education", mascot: "Phoenix" },
+  { id: "facet", shortName: "FACET", name: "Faculty of Computing", mascot: "Stallion" },
 ];
 
 const asParticipation = { maxPlacement: 500, allowDuplicates: true };

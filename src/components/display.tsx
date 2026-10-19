@@ -8,7 +8,7 @@ import { useLive } from "./providers";
 import { TeamBadge } from "./team-badge";
 import { CountUp } from "./count-up";
 import { sortStandings } from "@/lib/scoring/rank";
-import { formatBounty } from "@/lib/format";
+import { accentFor, formatBounty } from "@/lib/format";
 import { terms } from "@/lib/terminology";
 import { relativeTime } from "@/lib/format";
 import { Icon, MedalCount, MedalIcon } from "./icons";
@@ -197,7 +197,7 @@ function SlideOverall({ ordered, state }: { ordered: ReturnType<typeof sortStand
               <div className="hidden h-5 flex-1 overflow-hidden rounded-full bg-ink/70 sm:block">
                 <motion.div
                   className="h-full rounded-full"
-                  style={{ background: team.color }}
+                  style={{ background: accentFor(team.color) }}
                   initial={{ width: 0 }}
                   animate={{ width: `${(row.overall.totalMedals / max) * 100}%` }}
                   transition={{ duration: 1 }}

@@ -79,7 +79,11 @@ for you; hand-editing is fine too.
 - `id` — lowercase slug, e.g. `fbm`. Permanent.
 - `group` — `faculty` or `extension_campus`. The site's filter uses this; it never
   affects ranking.
-- `color` — hex accent, e.g. `#1f6f8b`.
+- `color` — the crew's official primary colour from the festival's identity
+  sheet, as hex. Stored exactly as given; where a colour is too dark to read on
+  the site's navy panels (FTED, CEC, TARRAGONA) the UI lifts it for display
+  only — see `accentFor()` in `src/lib/format.ts`. Editing this never changes
+  what is written back.
 - `logo_file` — the folder under `public/logos/`; see [`logos/README.md`](../logos/README.md).
 
 ### `Events` — 97 rows

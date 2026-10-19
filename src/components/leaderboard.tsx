@@ -5,7 +5,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useMemo, useState } from "react";
 import type { CompetitionState, DivisionOrOverall, Group } from "@/lib/types";
 import { applyGroupFilter, sortStandings } from "@/lib/scoring/rank";
-import { formatBounty, hexToRgbTriplet, prefersDarkText } from "@/lib/format";
+import { accentFor, formatBounty, hexToRgbTriplet, prefersDarkText } from "@/lib/format";
 import { terms } from "@/lib/terminology";
 import { TeamBadge } from "./team-badge";
 import { CountUp } from "./count-up";
@@ -164,12 +164,13 @@ export function WantedPoster({
   dense?: boolean;
 }) {
   const isFirst = rank === 1;
-  const rgb = hexToRgbTriplet(team.color);
+  const accent = accentFor(team.color);
+  const rgb = hexToRgbTriplet(accent);
   return (
     <Link
       href={`/teams/${team.id}`}
       className={`parchment panel-hover group relative block overflow-hidden rounded-2xl p-3 ${dense ? "" : "sm:p-4"}`}
-      style={{ ["--glow" as string]: team.color, outline: isFirst ? `2px solid ${team.color}` : undefined }}
+      style={{ ["--glow" as string]: accent, outline: isFirst ? `2px solid ${accent}` : undefined }}
       // Track the pointer so the spotlight below can follow it. Pure CSS vars,
       // no re-render; the glow simply sits still under reduced motion.
       onMouseMove={(e) => {
@@ -187,7 +188,7 @@ export function WantedPoster({
           <TeamBadge team={team} size={dense ? 56 : 72} priority={rank <= 3} shape="square" />
           <span
             className="absolute -left-2 -top-2 grid h-7 w-7 place-items-center rounded-full border-2 border-parchment bg-ink text-xs font-bold text-parchment"
-            style={{ boxShadow: isFirst ? `0 0 14px ${team.color}` : undefined }}
+            style={{ boxShadow: isFirst ? `0 0 14px ${accent}` : undefined }}
           >
             {rank}
           </span>
@@ -228,7 +229,7 @@ export function WantedPoster({
         <MedalCount kind="silver" value={<CountUp value={silver} />} />
         <MedalCount kind="bronze" value={<CountUp value={bronze} />} />
         <span className="ml-auto truncate text-[#6b4a2b]" aria-hidden style={{ color: `rgb(${rgb} / 1)` }}>
-          <span className="inline-block h-2.5 w-2.5 rounded-full align-middle" style={{ background: team.color, boxShadow: `0 0 8px ${team.color}` }} />
+          <span className="inline-block h-2.5 w-2.5 rounded-full align-middle" style={{ background: accent, boxShadow: `0 0 8px ${accent}` }} />
         </span>
       </div>
 

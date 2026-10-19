@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import type { DivisionOrOverall, Group } from "@/lib/types";
+import { accentFor } from "@/lib/format";
 import { buildMedalTable, applyGroupFilter, sortStandings } from "@/lib/scoring/rank";
 import { terms } from "@/lib/terminology";
 import { useLive } from "./providers";
@@ -104,7 +105,7 @@ export function MedalTally() {
                   key={row.teamId}
                   layout={!reduce}
                   className="border-b border-foam/10 last:border-0 hover:bg-foam/5"
-                  style={{ boxShadow: `inset 3px 0 0 ${team.color}` }}
+                  style={{ boxShadow: `inset 3px 0 0 ${accentFor(team.color)}` }}
                 >
                   <td className="px-1 py-2 sm:px-2">
                     <span className="block text-center font-display text-lg leading-none">{row.rank}</span>

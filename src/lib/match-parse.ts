@@ -9,7 +9,7 @@ import type { Team } from "./types";
  *     BEC 3-1 TEC | 11-8, 11-9      (optional per-set detail after a pipe)
  *
  * Crews are resolved by id, short name, mascot or full name, case- and
- * punctuation-insensitive, so "Blue Phoenix", "bluephoenix" and "fted" all find
+ * punctuation-insensitive, so "Phoenix", "phoenix" and "fted" all find
  * FTED. Anything unresolvable is reported rather than silently dropped — the
  * whole point of the admin data-quality work is that a fixture which cannot be
  * matched scores nothing and says nothing.
@@ -44,7 +44,8 @@ function buildResolver(teams: Team[]): (token: string) => string | null {
     add(t.shortName, t.id);
     add(t.mascot, t.id);
     add(t.name, t.id);
-    // "The Blue Phoenix" in the sheet, "Blue Phoenix" in the mascot column.
+    // The leaderboard renders "The {mascot}", the mascot column does not, so the
+    // prefixed form has to resolve too.
     add(`the ${t.mascot}`, t.id);
   }
   return (token: string) => index.get(norm(token)) ?? null;
@@ -73,8 +74,8 @@ export function parseMatchLines(input: string, teams: Team[]): { fixtures: Parse
         return;
       }
 
-      // Crews are multi-word in practice — "Blue Phoenix", "Faculty of Business
-      // Management" — so match the LONGEST phrase from each end that resolves to
+      // Crews are multi-word in practice — "Shark (FaHuSciC Jaws)", "Faculty of
+      // Business Management" — so match the LONGEST phrase from each end that resolves to
       // a crew, and treat whatever is left in between as the score. Assuming a
       // single token per crew silently failed on exactly the names people use.
       const MAX_WORDS = 6;

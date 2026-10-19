@@ -13,10 +13,10 @@ const team = (id: string, shortName: string, mascot: string, name: string): Team
 });
 
 const teams = [
-  team("fted", "FTED", "Blue Phoenix", "Faculty of Teacher Education"),
-  team("facet", "FACET", "Orange Stallion", "Faculty of Computing, Engineering"),
-  team("fbm", "FBM", "Yellow Eagle", "Faculty of Business Management"),
-  team("fcje", "FCJE", "Red Eagle", "Faculty of Criminal Justice"),
+  team("fted", "FTED", "Phoenix", "Faculty of Teacher Education"),
+  team("facet", "FACET", "Stallion", "Faculty of Computing, Engineering"),
+  team("fbm", "FBM", "Griffins", "Faculty of Business Management"),
+  team("fcje", "FCJE", "Eagle", "Faculty of Criminal Justice"),
 ];
 
 describe("fixture paste parsing", () => {
@@ -44,7 +44,7 @@ describe("fixture paste parsing", () => {
 
   it("resolves a crew by mascot, and by full name, regardless of case", () => {
     const { fixtures, problems } = parseMatchLines(
-      "blue phoenix 2-0 Orange Stallion\nFaculty of Business Management 1-2 red eagle",
+      "phoenix 2-0 Stallion\nFaculty of Business Management 1-2 eagle",
       teams,
     );
     expect(problems).toEqual([]);

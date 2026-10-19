@@ -71,7 +71,7 @@ standings, brackets, live scoreboards, TV mode, the Crew Parade and share cards.
 
 - Rendered with `next/image` (`object-fit: cover` on a 1:1 box), lazy-loaded,
   explicit `width`/`height`, and descriptive alt text
-  (e.g. _"FBM mascot logo: Yellow Eagle"_).
+  (e.g. _"FBM mascot logo: Griffins"_).
 - Framed with a 2 px border in the crew accent colour plus a soft glow.
 - **Fallback:** if the file is missing or fails to load, the badge shows the crew
   initials on an accent-coloured background — no broken images, ever.
@@ -79,10 +79,27 @@ standings, brackets, live scoreboards, TV mode, the Crew Parade and share cards.
   parchment panel so bright crests (FBM yellow, SIEC pale yellow, FNAHS gold,
   FAHUSCIC cyan) stay readable.
 
+## Crew identity
+
+Colours and mascots come from the festival's official **SIGLAKAS 2026 TEAM
+IDENTITIES** sheet. They live in `src/lib/data/seed.ts` and in the `Teams` tab of
+the spreadsheet — the tab is the source of truth at runtime, the seed is what
+scripts and tests read, so the two must be kept in step.
+
+`accentFor()` (`src/lib/format.ts`) lifts the three official colours that are
+darker than the site's navy panels — FTED `#1a22a8`, CEC `#080d61` and TARRAGONA
+`#000000` — so their frames and glows stay visible. It only ever adjusts what is
+painted; the stored value is never rewritten. FALS keeps its artwork green,
+because the identity sheet leaves both of its colour fields blank.
+
+The optional SECONDARY colours from the sheet are noted in the `seed.ts` comment
+but are not part of the data model — there is one accent per crew.
+
 ## Look-alike crews
 
-`FBM` (bright yellow), `FNAHS` (gold) and `SIEC` (pale yellow) — and `BEC`
-(dark red) vs `FCJE` (red) — must never be distinguishable by colour alone.
+`FBM` (`#FFDF00`) and `SIEC` (`#FFDF22`) are now near-identical yellows, with
+`FNAHS` (gold) close behind; `BEC` (dark red, lifted for display) and `FCJE`
+(red) are the other pair. None of them may ever be told apart by colour alone.
 Charts use dashed lines and different marker shapes, and **every** logo is
 labelled with the crew `short_name`.
 

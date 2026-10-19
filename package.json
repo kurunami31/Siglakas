@@ -12,6 +12,7 @@
     "optimize-logos": "tsx scripts/optimize-logos.ts",
     "setup-sheet": "tsx scripts/setup-sheet.ts",
     "check-sheet": "tsx scripts/check-sheet.ts",
+    "sync-teams": "tsx scripts/sync-teams.ts",
     "beautify-sheet": "tsx scripts/beautify-sheet.ts",
     "service-account-json": "tsx scripts/service-account-json.ts",
     "create-admin": "tsx scripts/create-admin.ts",

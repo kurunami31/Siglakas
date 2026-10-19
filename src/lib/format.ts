@@ -76,6 +76,82 @@ export function prefersDarkText(hex: string): boolean {
   return luminance(hex) > 0.45;
 }
 
+/** The navy the app paints behind every crew accent (`--color-ink`). */
+export const PANEL_INK = "#071426";
+
+/** Non-text UI (borders, bars, swatches) needs 3:1 — WCAG 2.2 SC 1.4.11. */
+const ACCENT_MIN_CONTRAST = 3;
+
+const HEX = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
+
+function toRgb(hex: string): [number, number, number] {
+  const clean = hex.replace("#", "");
+  const full = clean.length === 3 ? clean.split("").map((c) => c + c).join("") : clean;
+  const num = Number.parseInt(full, 16);
+  if (Number.isNaN(num)) return [255, 255, 255];
+  return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
+}
+
+/** "#aabbcc" → [hue 0..360, saturation 0..1, lightness 0..1]. */
+export function hexToHsl(hex: string): [number, number, number] {
+  const [r255, g255, b255] = toRgb(hex);
+  const r = r255 / 255;
+  const g = g255 / 255;
+  const b = b255 / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const d = max - min;
+  const l = (max + min) / 2;
+  // Grey has no meaningful hue, and `d === 0` would divide by zero below.
+  if (d === 0) return [0, 0, l];
+  const s = d / (1 - Math.abs(2 * l - 1));
+  let h: number;
+  if (max === r) h = ((g - b) / d) % 6;
+  else if (max === g) h = (b - r) / d + 2;
+  else h = (r - g) / d + 4;
+  return [(h * 60 + 360) % 360, s, l];
+}
+
+function hslToHex(h: number, s: number, l: number): string {
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = l - c / 2;
+  const seg = Math.floor((((h % 360) + 360) % 360) / 60);
+  const [r, g, b] =
+    seg === 0 ? [c, x, 0]
+    : seg === 1 ? [x, c, 0]
+    : seg === 2 ? [0, c, x]
+    : seg === 3 ? [0, x, c]
+    : seg === 4 ? [x, 0, c]
+    : [c, 0, x];
+  const byte = (v: number) => Math.round(Math.max(0, Math.min(1, v + m)) * 255);
+  return `#${[byte(r), byte(g), byte(b)].map((v) => v.toString(16).padStart(2, "0")).join("")}`;
+}
+
+/**
+ * The colour to actually PAINT with, given a crew's official accent.
+ *
+ * The crews' real colours come from the festival's identity sheet, and a few of
+ * them were never meant to be seen as a 2px line on a dark navy panel: FTED is
+ * a deep blue (`#1a22a8`), CEC a near-black blue (`#080d61`) and TARRAGONA
+ * plain black. Drawn as-is they simply vanish into the background.
+ *
+ * So: keep the hue and the saturation, and walk the lightness up only as far as
+ * it takes to clear 3:1 against the panel. A colour that already reads comes
+ * back byte-for-byte, and the stored value is never modified — this is a display
+ * concern only, so the admin grid and the spreadsheet keep the official hex.
+ */
+export function accentFor(hex: string): string {
+  if (!HEX.test(hex)) return hex;
+  if (contrastRatio(hex, PANEL_INK) >= ACCENT_MIN_CONTRAST) return hex;
+  const [h, s, l] = hexToHsl(hex);
+  for (let step = l + 0.01; step < 1; step += 0.01) {
+    const candidate = hslToHex(h, s, step);
+    if (contrastRatio(candidate, PANEL_INK) >= ACCENT_MIN_CONTRAST) return candidate;
+  }
+  return hslToHex(h, s, 1);
+}
+
 export function slugify(input: string): string {
   return input
     .toLowerCase()

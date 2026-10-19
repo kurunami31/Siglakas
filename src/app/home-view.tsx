@@ -8,12 +8,15 @@ import { terms } from "@/lib/terminology";
 import { sortStandings } from "@/lib/scoring/rank";
 import { Ticker } from "@/components/ticker";
 import { Icon, MedalIcon, type IconName } from "@/components/icons";
+import { accentFor } from "@/lib/format";
 
 export function HomeView() {
   const { state } = useLive();
   const t = terms(state.config);
   const top = sortStandings(state.standings, "overall").slice(0, 3);
-  const colors = state.teams.map((x) => x.color);
+  // Lifted for display: these feed the confetti palette on the dark panel, where
+  // a crew's official near-black would never be seen.
+  const colors = state.teams.map((x) => accentFor(x.color));
 
   return (
     <div className="space-y-6">

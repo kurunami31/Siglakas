@@ -5,7 +5,7 @@ import { useMemo } from "react";
 import { useLive } from "./providers";
 import { TeamBadge } from "./team-badge";
 import { CountUp } from "./count-up";
-import { formatBounty } from "@/lib/format";
+import { accentFor, formatBounty } from "@/lib/format";
 import { terms } from "@/lib/terminology";
 import { sortStandings } from "@/lib/scoring/rank";
 import { Icon, MedalIcon } from "./icons";
@@ -43,12 +43,12 @@ export function TeamProfile({ teamId }: { teamId: string }) {
     <div className="space-y-5">
       <header
         className="panel relative overflow-hidden rounded-2xl p-5"
-        style={{ borderTop: `4px solid ${team.color}`, boxShadow: `0 0 40px -22px ${team.color}` }}
+        style={{ borderTop: `4px solid ${accentFor(team.color)}`, boxShadow: `0 0 40px -22px ${accentFor(team.color)}` }}
       >
         <div
           aria-hidden
           className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full opacity-25 blur-2xl"
-          style={{ background: team.color }}
+          style={{ background: accentFor(team.color) }}
         />
         <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center">
           <TeamBadge team={team} size={120} priority shape="square" />
@@ -57,7 +57,7 @@ export function TeamProfile({ teamId }: { teamId: string }) {
               {team.group === "faculty" ? t.facultyFleet : t.campusFleet} · {t.rank} #{standing.ranks.overall}
             </p>
             <h1 className="font-display text-3xl text-parchment sm:text-4xl">{team.name}</h1>
-            <p className="font-stencil mt-1 text-lg" style={{ color: team.color }}>
+            <p className="font-stencil mt-1 text-lg" style={{ color: accentFor(team.color) }}>
               The {team.mascot}
             </p>
             {team.motto && <p className="mt-1 text-sm italic text-foam/80">“{team.motto}”</p>}

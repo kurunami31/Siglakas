@@ -1,27 +1,27 @@
 {
   "fted": {
     "dominant": "#2889d9",
-    "accent": "#38B2FF",
+    "accent": "#1a22a8",
     "width": 2970,
     "height": 2970,
     "source": "FTED.jpg",
-    "mascot": "Blue Phoenix"
+    "mascot": "Phoenix"
   },
   "facet": {
     "dominant": "#c35712",
-    "accent": "#E8681A",
+    "accent": "#FF5C00",
     "width": 2970,
     "height": 2970,
     "source": "FACET icon.jpg",
-    "mascot": "Orange Stallion"
+    "mascot": "Stallion"
   },
   "fahuscic": {
     "dominant": "#1faec5",
-    "accent": "#22C5E3",
+    "accent": "#3FC7DD",
     "width": 2970,
     "height": 2970,
     "source": "FAHUSCIC.jpg",
-    "mascot": "Shark"
+    "mascot": "Shark (FaHuSciC Jaws)"
   },
   "fals": {
     "dominant": "#81b574",
@@ -29,67 +29,67 @@
     "width": 2970,
     "height": 2970,
     "source": "FALS.jpg",
-    "mascot": "Green Serpent"
+    "mascot": "Python"
   },
   "fbm": {
     "dominant": "#e4c417",
-    "accent": "#FAD607",
+    "accent": "#FFDF00",
     "width": 2970,
     "height": 2970,
     "source": "FBM.jpg",
-    "mascot": "Yellow Eagle"
+    "mascot": "Griffins"
   },
   "fcje": {
     "dominant": "#ce2a28",
-    "accent": "#E02626",
+    "accent": "#FF2C2C",
     "width": 2970,
     "height": 2970,
     "source": "FCJE.jpg",
-    "mascot": "Red Eagle"
+    "mascot": "Eagle"
   },
   "fnahs": {
     "dominant": "#d0a12c",
-    "accent": "#D9A62B",
+    "accent": "#C29320",
     "width": 2970,
     "height": 2970,
     "source": "FNAHS.jpg",
-    "mascot": "Golden Pegasus"
+    "mascot": "Pegasus"
   },
   "siec": {
     "dominant": "#d9c76c",
-    "accent": "#E8D24A",
+    "accent": "#FFDF22",
     "width": 2970,
     "height": 2970,
     "source": "SIEC.jpg",
-    "mascot": "Hornet"
+    "mascot": "Hornets"
   },
   "tec": {
     "dominant": "#9d9c9a",
-    "accent": "#9A9994",
+    "accent": "#000000",
     "width": 2970,
     "height": 2970,
     "source": "TEC.jpg",
-    "mascot": "Howling Wolf"
+    "mascot": "Direwolves"
   },
   "bec": {
     "dominant": "#790e08",
-    "accent": "#8B0A0A",
+    "accent": "#8b0000",
     "width": 2970,
     "height": 2970,
     "source": "BEC.jpg",
-    "mascot": "Bull"
+    "mascot": "Bulls"
   },
   "bgec": {
     "dominant": "#519882",
-    "accent": "#3FA68A",
+    "accent": "#59c9ae",
     "width": 2970,
     "height": 2970,
     "source": "BGEC.jpg",
-    "mascot": "Sea Dragon"
+    "mascot": "Bakunawa"
   },
   "cec": {
     "dominant": "#5c5e86",
-    "accent": "#5B5FA8",
+    "accent": "#080d61",
     "width": 2970,
     "height": 2970,
     "source": "CEC.jpg",

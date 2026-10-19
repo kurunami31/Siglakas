@@ -409,7 +409,7 @@ function FixturePaste({
       </h2>
       <p className="mb-3 text-xs text-foam/70">
         One fixture per line: <code>FTED 2 - 0 FACET</code>. Crew names come from the Teams tab, so
-        &ldquo;Blue Phoenix&rdquo; works as well as <code>fted</code>. Write <code>vs</code> for a fixture that
+        &ldquo;Phoenix&rdquo; works as well as <code>fted</code>. Write <code>vs</code> for a fixture that
         has not been played. Scored lines are saved as finished.
       </p>
 

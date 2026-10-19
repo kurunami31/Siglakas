@@ -14,21 +14,36 @@ import { DEFAULT_PLACEMENT_TABLE } from "../scoring/placement";
 
 /* ------------------------------------------------------------------ *
  * CREWS (the 12 competing teams)
+ *
+ * Colours and mascots come from the official "SIGLAKAS 2026 TEAM IDENTITIES"
+ * sheet. `color` is the crew's REAL primary colour and is stored verbatim.
+ *
+ * Three of them are darker than the navy they get drawn on (FTED, CEC and
+ * TARRAGONA — see `accentFor()` in lib/format.ts), so the UI lifts those for
+ * display rather than keeping a faded copy of the truth in here. Editing a
+ * colour in the admin screen or the Teams tab changes what is stored, not what
+ * is shown, and vice versa.
+ *
+ * The official SECONDARY colours are recorded for reference only — the data
+ * model carries one accent per crew, so nothing reads these:
+ *   FAHUSCIC #B6DFE6 · FCJE #FFFFFF · FTED #2e86f0 · FBM #FFFFFF · FNAHS #FFFFFF
+ *   BAGANGA #135c51 · BANAYBANAY #800000 · TARRAGONA Dim Gray · SAN ISIDRO #000000
+ *   CATEEL #FFFFFF · FACET and FALS: none specified
  * ------------------------------------------------------------------ */
 
 export const TEAMS: Team[] = [
-  { id: "fted", name: "Faculty of Teachers Education", shortName: "FTED", group: "faculty", color: "#38B2FF", logoFile: "fted", mascot: "Blue Phoenix", motto: "Rise and teach, rise and soar" },
-  { id: "facet", name: "Faculty of Computing, Engineering, and Technology", shortName: "FACET", group: "faculty", color: "#E8681A", logoFile: "facet", mascot: "Orange Stallion", motto: "Build the future, ride the storm" },
-  { id: "fahuscic", name: "Faculty of Human Sciences and Communication", shortName: "FAHUSCIC", group: "faculty", color: "#22C5E3", logoFile: "fahuscic", mascot: "Shark", motto: "Words cut deeper than tides" },
-  { id: "fals", name: "Faculty of Agriculture and Life Sciences", shortName: "FALS", group: "faculty", color: "#6FBF5C", logoFile: "fals", mascot: "Green Serpent", motto: "Harvest the horizon" },
-  { id: "fbm", name: "Faculty of Business and Management", shortName: "FBM", group: "faculty", color: "#FAD607", logoFile: "fbm", mascot: "Yellow Eagle", motto: "Own the market, own the sky" },
-  { id: "fcje", name: "Faculty of Criminal Justice Education", shortName: "FCJE", group: "faculty", color: "#E02626", logoFile: "fcje", mascot: "Red Eagle", motto: "Justice flies on crimson wings" },
-  { id: "fnahs", name: "Faculty of Nursing and Allied Health Sciences", shortName: "FNAHS", group: "faculty", color: "#D9A62B", logoFile: "fnahs", mascot: "Golden Pegasus", motto: "Heal, rise, ascend" },
-  { id: "siec", name: "San Isidro Extension Campus", shortName: "SIEC", group: "extension_campus", color: "#E8D24A", logoFile: "siec", mascot: "Hornet", motto: "Small wings, sharp sting" },
-  { id: "tec", name: "Tarragona Extension Campus", shortName: "TEC", group: "extension_campus", color: "#9A9994", logoFile: "tec", mascot: "Howling Wolf", motto: "The pack never sails alone" },
-  { id: "bec", name: "Banay-Banay Extension Campus", shortName: "BEC", group: "extension_campus", color: "#8B0A0A", logoFile: "bec", mascot: "Bull", motto: "Charge without fear" },
-  { id: "bgec", name: "Baganga Extension Campus", shortName: "BGEC", group: "extension_campus", color: "#3FA68A", logoFile: "bgec", mascot: "Sea Dragon", motto: "From the deep, undefeated" },
-  { id: "cec", name: "Cateel Extension Campus", shortName: "CEC", group: "extension_campus", color: "#5B5FA8", logoFile: "cec", mascot: "Kraken", motto: "Many arms, one grip" },
+  { id: "fted", name: "Faculty of Teacher Education", shortName: "FTED", group: "faculty", color: "#1a22a8", logoFile: "fted", mascot: "Phoenix", motto: "Rise and teach, rise and soar" },
+  { id: "facet", name: "Faculty of Computing, Engineering, and Technology", shortName: "FACET", group: "faculty", color: "#FF5C00", logoFile: "facet", mascot: "Stallion", motto: "Build the future, ride the storm" },
+  { id: "fahuscic", name: "Faculty of Human Sciences and Communication", shortName: "FAHUSCIC", group: "faculty", color: "#3FC7DD", logoFile: "fahuscic", mascot: "Shark (FaHuSciC Jaws)", motto: "Words cut deeper than tides" },
+  { id: "fals", name: "Faculty of Agriculture and Life Sciences", shortName: "FALS", group: "faculty", color: "#6FBF5C", logoFile: "fals", mascot: "Python", motto: "Harvest the horizon" },
+  { id: "fbm", name: "Faculty of Business and Management", shortName: "FBM", group: "faculty", color: "#FFDF00", logoFile: "fbm", mascot: "Griffins", motto: "Own the market, own the sky" },
+  { id: "fcje", name: "Faculty of Criminal Justice Education", shortName: "FCJE", group: "faculty", color: "#FF2C2C", logoFile: "fcje", mascot: "Eagle", motto: "Justice flies on crimson wings" },
+  { id: "fnahs", name: "Faculty of Nursing and Allied Health Sciences", shortName: "FNAHS", group: "faculty", color: "#C29320", logoFile: "fnahs", mascot: "Pegasus", motto: "Heal, rise, ascend" },
+  { id: "siec", name: "San Isidro Extension Campus", shortName: "SIEC", group: "extension_campus", color: "#FFDF22", logoFile: "siec", mascot: "Hornets", motto: "Small wings, sharp sting" },
+  { id: "tec", name: "Tarragona Extension Campus", shortName: "TEC", group: "extension_campus", color: "#000000", logoFile: "tec", mascot: "Direwolves", motto: "The pack never sails alone" },
+  { id: "bec", name: "Banay-Banay Extension Campus", shortName: "BEC", group: "extension_campus", color: "#8b0000", logoFile: "bec", mascot: "Bulls", motto: "Charge without fear" },
+  { id: "bgec", name: "Baganga Extension Campus", shortName: "BGEC", group: "extension_campus", color: "#59c9ae", logoFile: "bgec", mascot: "Bakunawa", motto: "From the deep, undefeated" },
+  { id: "cec", name: "Cateel Extension Campus", shortName: "CEC", group: "extension_campus", color: "#080d61", logoFile: "cec", mascot: "Kraken", motto: "Many arms, one grip" },
 ];
 
 /* ------------------------------------------------------------------ *
