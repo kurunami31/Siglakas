@@ -113,6 +113,12 @@ export class DemoRepository implements Repository {
         if (idx >= 0) s.events[idx] = { ...s.events[idx], ...command.patch };
         break;
       }
+      case "upsertEvent": {
+        const idx = s.events.findIndex((e) => e.id === command.event.id);
+        if (idx >= 0) s.events[idx] = command.event;
+        else s.events.push(command.event);
+        break;
+      }
       case "upsertTeam": {
         const idx = s.teams.findIndex((t) => t.id === command.team.id);
         if (idx >= 0) s.teams[idx] = { ...s.teams[idx], ...command.team };

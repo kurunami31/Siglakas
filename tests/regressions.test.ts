@@ -278,7 +278,7 @@ describe("demo data", () => {
    * The event pages and the medal board are computed by two different modules
    * (`events.ts` and `rank.ts`) from the same rows. They must never disagree:
    * that divergence is exactly what the FUN RUN bug was. This walks the whole
-   * demo festival — 97 events, every scoring type — and compares the golds each
+   * demo festival — 98 events, every scoring type — and compares the golds each
    * row displays against the golds the board credits, crew by crew.
    */
   it("the event pages and the medal board agree across the whole festival", async () => {

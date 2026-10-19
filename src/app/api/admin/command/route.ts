@@ -26,6 +26,7 @@ function requiredPermission(command: Command): Permission {
     case "updateConfig":
       return "manage_points";
     case "updateEvent":
+    case "upsertEvent":
       return "manage_events";
     case "upsertTeam":
     case "deleteTeam":
@@ -36,6 +37,20 @@ function requiredPermission(command: Command): Permission {
     case "deleteUser":
       return "manage_users";
   }
+}
+
+/**
+ * The event a command names, if any.
+ *
+ * `upsertEvent` is included deliberately: `updateEvent` was the only event
+ * command, so a lock guard keyed on `"eventId" in command` would have let an
+ * upsert overwrite a locked event and slip straight past it.
+ */
+function targetEventId(command: Command): string | undefined {
+  if ("eventId" in command) return command.eventId;
+  if (command.type === "saveMatch") return command.match.eventId;
+  if (command.type === "upsertEvent") return command.event.id;
+  return undefined;
 }
 
 /** True when `username` is the only remaining active Super Admin. */
@@ -83,8 +98,7 @@ export async function POST(request: Request) {
     const state = await store.init();
 
     // locked-event guard: only the Secretariat (and above) may touch a locked event
-    const eventId =
-      "eventId" in command ? command.eventId : command.type === "saveMatch" ? command.match.eventId : command.type === "deleteMatch" ? undefined : undefined;
+    const eventId = targetEventId(command);
     if (eventId) {
       const event = state.events.find((e) => e.id === eventId);
       if (event?.locked && !can(session.role, "lock_event")) {

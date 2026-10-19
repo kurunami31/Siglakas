@@ -30,6 +30,7 @@ export type Command =
   | { type: "announce"; message: string; actor: string }
   | { type: "updateConfig"; patch: Partial<Config>; actor: string }
   | { type: "updateEvent"; id: string; actor: string; patch: Partial<EventItem> }
+  | { type: "upsertEvent"; event: EventItem; actor: string }
   | { type: "upsertTeam"; team: Team; actor: string }
   | { type: "deleteTeam"; id: string; actor: string }
   | { type: "saveCriteria"; eventId: string; rows: Criterion[]; actor: string }

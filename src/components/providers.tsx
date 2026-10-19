@@ -101,7 +101,7 @@ export function LiveProvider({
       poll = setInterval(async () => {
         if (stopped) return;
         try {
-          // Cheap probe first. /api/state carries 12 teams, 97 events and every
+          // Cheap probe first. /api/state carries 12 teams, 98 events and every
           // result and match, so pulling it on a timer unconditionally wastes
           // bandwidth and function CPU; /api/version is a tiny hash payload.
           const probe = await fetch("/api/version", { cache: "no-store" });

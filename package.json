@@ -13,6 +13,7 @@
     "setup-sheet": "tsx scripts/setup-sheet.ts",
     "check-sheet": "tsx scripts/check-sheet.ts",
     "sync-teams": "tsx scripts/sync-teams.ts",
+    "record-saludo-mascot": "tsx scripts/record-saludo-mascot.ts",
     "beautify-sheet": "tsx scripts/beautify-sheet.ts",
     "service-account-json": "tsx scripts/service-account-json.ts",
     "create-admin": "tsx scripts/create-admin.ts",

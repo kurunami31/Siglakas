@@ -13,15 +13,16 @@
 import { loadCredentialsFromEnv, parseAoa, SheetsClient } from "../src/lib/data/google";
 import { HEADERS, TABS } from "../src/lib/data/sheets-repo";
 
-const EXPECTED_EVENTS = 97;
+const EXPECTED_EVENTS = 98;
 const EXPECTED_TEAMS = 12;
-// sports 266 + socio-cultural 160. Two changes from the original manual figures:
-// Live Band's weight was confirmed at 5 (was 9), and FUN RUN / FUNEBALL became
-// participation events whose weight is 1 (they were 50 and 10), because their
-// golds now come from each crew's participant count rather than a fixed weight.
-// Changing an event's weight means keeping the Guide text in beautify-sheet.ts
-// and the docs in step too.
-const EXPECTED_MEDALS = 426;
+// sports 266 + socio-cultural 162. Three changes from the original manual
+// figures: Live Band's weight was confirmed at 5 (was 9); FUN RUN / FUNEBALL
+// became participation events whose weight is 1 (they were 50 and 10), because
+// their golds now come from each crew's participant count rather than a fixed
+// weight; and the Saludo (2) was added as a competition of its own, which the
+// printed socio-cultural point system predates. Changing an event's weight means
+// keeping the Guide text in beautify-sheet.ts and the docs in step too.
+const EXPECTED_MEDALS = 428;
 
 function loadEnvFiles() {
   const loader = (process as unknown as { loadEnvFile?: (p: string) => void }).loadEnvFile;

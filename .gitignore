@@ -51,6 +51,14 @@ siglakas-*.json
 /OSCAL Logo.jpg
 /USC.jpg
 /OFFICE OF THE STUDENT SPORTS AND WELLNESS.jpg
+# Official tally sheets for competitions that have finished. Source documents,
+# kept out of the repo; the results they hold are recorded in the sheet by
+# scripts/record-saludo-mascot.ts, which cites them by filename.
+/OVERALL-*.pdf
+/Saludo criteria.jpg
+# Photograph of the official blank Mascot judge sheet — same reason, and it is
+# the source that confirms the entry-number -> crew mapping used above.
+/856047708_2239775733549482_2597333456696719357_n.jpg
 
 # vercel
 .vercel

@@ -186,6 +186,10 @@ const CULTURAL_SEEDS: EventSeed[] = [
   { id: "hiyas-ng-dorsu", name: "Hiyas ng DOrSU", category: "Special Category", medalWeight: 10, gender: "W", division: "cultural" },
   { id: "cheer-dance", name: "Cheer Dance", category: "Special Category", medalWeight: 15, division: "cultural" },
   { id: "mascot", name: "Mascot", category: "Special Category", medalWeight: 3, division: "cultural" },
+  // The Saludo is its own competition — it is NOT Cheer Dance. Confirmed with
+  // the Secretariat, which is why it is absent from the printed socio-cultural
+  // point system: that sheet predates it. Weight 2 (Mascot is 3).
+  { id: "saludo", name: "Saludo", category: "Special Category", medalWeight: 2, division: "cultural" },
 ];
 
 function scoringTypeFor(category: string): EventItem["scoringType"] {
@@ -277,6 +281,27 @@ export const CRITERIA_BY_EVENT: Record<string, Array<{ criterion: string; weight
     { criterion: "Technique", weight: 40 },
     { criterion: "Choreography", weight: 30 },
     { criterion: "Stage Presence", weight: 30 },
+  ],
+  /**
+   * Mascot and the Saludo are their own competitions and neither is a pageant.
+   * Without these two entries they silently inherit the "Special Category"
+   * default above — the Ginoong/Hiyas rubric of Poise & Presence, Talent,
+   * Interview and Cultural Attire — which is what the live sheet carried until
+   * these were added. Source: SIGLAKAS 2026 Manual of Operation.
+   */
+  "mascot": [
+    { criterion: "Creativity and Design", weight: 30 },
+    { criterion: "Performance and Animation", weight: 25 },
+    { criterion: "Characterization", weight: 20 },
+    { criterion: "Audience Impact", weight: 15 },
+    { criterion: "Overall Execution", weight: 10 },
+  ],
+  // Saludo rubric supplied by the Secretariat ("Saludo criteria.jpg").
+  "saludo": [
+    { criterion: "Execution & Synchronization", weight: 35 },
+    { criterion: "Energy and Showmanship", weight: 30 },
+    { criterion: "Creativity & Choreography", weight: 25 },
+    { criterion: "Overall Impact", weight: 10 },
   ],
 };
 

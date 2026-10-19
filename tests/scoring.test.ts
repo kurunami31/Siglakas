@@ -284,10 +284,14 @@ describe("seed catalogue integrity", () => {
     expect(teams.filter((t) => t.group === "extension_campus")).toHaveLength(5);
   });
 
-  it("has the full 97-event catalogue totalling 426 medals per colour", () => {
-    expect(EVENTS).toHaveLength(97);
+  it("has the full 98-event catalogue totalling 428 medals per colour", () => {
+    // The Saludo was added after the sheet was seeded: it is its own competition
+    // rather than Cheer Dance, at weight 2. It is absent from the printed
+    // socio-cultural point system, which predates it — hence Special Category 38
+    // and a cultural 164 there, against 40 and 166 here.
+    expect(EVENTS).toHaveLength(98);
     const total = EVENTS.reduce((sum, e) => sum + e.medalWeight, 0);
-    expect(total).toBe(426);
+    expect(total).toBe(428);
   });
 
   it("matches the printed section subtotals", () => {
@@ -307,14 +311,15 @@ describe("seed catalogue integrity", () => {
     expect(sum("Dance Arts")).toBe(46);
     expect(sum("Dramatic Arts")).toBe(19);
     expect(sum("Literary Arts")).toBe(13);
-    expect(sum("Special Category")).toBe(38);
+    // 40, not the printed 38: the Saludo (2) is not on that sheet.
+    expect(sum("Special Category")).toBe(40);
   });
 
-  it("splits 266 sports / 160 cultural", () => {
+  it("splits 266 sports / 162 cultural", () => {
     const sports = EVENTS.filter((e) => e.division === "sports").reduce((s, e) => s + e.medalWeight, 0);
     const cultural = EVENTS.filter((e) => e.division === "cultural").reduce((s, e) => s + e.medalWeight, 0);
     expect(sports).toBe(266);
-    expect(cultural).toBe(160);
+    expect(cultural).toBe(162);
   });
 
   it("gives every judged event weighted criteria", () => {

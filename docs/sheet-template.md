@@ -15,7 +15,7 @@ The workbook has twelve tabs. Ten hold app data; two are for humans only.
 | --- | --- | --- |
 | `Config` | Competition name, championship rule, point table | Secretariat (via the site) |
 | `Teams` | The 12 crews | Secretariat |
-| `Events` | All 97 events and their weights | Secretariat (the `verify` flag by OSCAL) |
+| `Events` | All 98 events and their weights | Secretariat (the `verify` flag by OSCAL) |
 | `Criteria` | Judging criteria per judged event | Secretariat |
 | `Results` | Placements — **the tally itself** | PIO + Secretariat (app, or by hand) |
 | `Matches` | Bracket / round-robin games for team sports | PIO + Secretariat (app, or by hand) |
@@ -86,7 +86,7 @@ for you; hand-editing is fine too.
   what is written back.
 - `logo_file` — the folder under `public/logos/`; see [`logos/README.md`](../logos/README.md).
 
-### `Events` — 97 rows
+### `Events` — 98 rows
 
 `id`, `name`, `division`, `category`, `scoring_type`, `medal_weight`, `gender`,
 `multiplier`, `schedule`, `venue`, `status`, `locked`, `verify`, `note`

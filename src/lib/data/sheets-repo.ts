@@ -304,6 +304,16 @@ export class SheetsRepository implements Repository {
         raw.config = merged as RawSheets["config"];
         break;
       }
+      case "upsertEvent": {
+        // Mirrors `upsertTeam`: replace by id if present, otherwise append. Used
+        // to create an event scheduled after the sheet was seeded, which
+        // `updateEvent` cannot do.
+        const events = raw.events.filter((e) => e.id !== command.event.id);
+        events.push(command.event);
+        await this.writeTable(TABS.events, HEADERS.events, events.map(eventRow), raw.events.length);
+        raw.events = events;
+        break;
+      }
       case "updateEvent": {
         const events = raw.events.map((e) => (e.id === command.id ? { ...e, ...command.patch } : e));
         await this.writeTable(TABS.events, HEADERS.events, events.map(eventRow), raw.events.length);

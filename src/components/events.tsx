@@ -39,7 +39,7 @@ export function EventExplorer() {
     return true;
   });
 
-  // ---- pagination (97 islands is far too long to scroll) ----
+  // ---- pagination (98 islands is far too long to scroll) ----
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(12);
   const listRef = useRef<HTMLDivElement>(null);

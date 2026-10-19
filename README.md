@@ -9,7 +9,7 @@ Built for competition day: it must survive a spotty campus network, be readable 
 projector *and* a phone, and never invent a number.
 
 - **12 crews** — 7 faculties + 5 extension campuses, one pool, one leaderboard.
-- **97 events**, **426 medals** at stake across two divisions (sports, socio-cultural), plus two participation events where every entrant earns a gold.
+- **98 events**, **428 medals** at stake across two divisions (sports, socio-cultural), plus two participation events where every entrant earns a gold.
 - **One championship.** Both divisions roll into a single overall title.
 
 ---
@@ -214,12 +214,12 @@ and **503** when the sheet is unreachable:
 
 ```json
 { "ok": true, "kind": "sheets", "lastSyncedAt": "...", "version": "ejkt1p",
-  "teams": 12, "events": 97, "medalsAtStake": 426 }
+  "teams": 12, "events": 98, "medalsAtStake": 428 }
 ```
 
 Point a free monitor (Better Stack, UptimeRobot) or a Vercel cron at
 `https://<your-app>.vercel.app/api/health` and alert on anything that is not 200.
-Watching `medalsAtStake` also catches a silent data problem: it should read 426.
+Watching `medalsAtStake` also catches a silent data problem: it should read 428.
 
 ## Performance (measured, not assumed)
 

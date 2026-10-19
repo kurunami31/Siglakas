@@ -12,7 +12,7 @@ Print this. Work top to bottom. Times are relative to the opening ceremony.
       member from **Admin → Accounts**. No shared logins.
 - [ ] **Run the health check** — `npm run check-sheet`. It must report no problems.
 - [ ] **Take a baseline backup** — `npm run backup-sheet`. Note that
-      `medalsAtStake` must read **426** on `/api/health`.
+      `medalsAtStake` must read **428** on `/api/health`.
 - [ ] **Point a monitor at `/api/health`** and confirm it alerts on a 503. The
       sheet connection is the one thing that fails silently otherwise.
 - [ ] **Re-apply the sheet styling** — `npm run beautify-sheet` (restores the
@@ -38,7 +38,7 @@ Print this. Work top to bottom. Times are relative to the opening ceremony.
 - [ ] **Post a welcome announcement.**
 - [ ] **Check the public board is not frozen** (Admin → Point system → `points_freeze`
       must be off).
-- [ ] **Verify the numbers**: 12 crews, 97 events, 426 medals on the `Dashboard`.
+- [ ] **Verify the numbers**: 12 crews, 98 events, 428 medals on the `Dashboard`.
 - [ ] **Note the sheet URL and the version-history path** on paper, in case you need
       to roll back quickly.
 

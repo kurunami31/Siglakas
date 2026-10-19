@@ -56,6 +56,35 @@ export const eventPatchSchema = z
   })
   .strict();
 
+/**
+ * A complete event, for creating one that does not exist yet.
+ *
+ * `updateEvent` only patches rows that are already there — it maps over the
+ * existing list and silently drops an unknown id — so it can never add an event
+ * that is newly scheduled after the sheet was seeded. This is the counterpart to
+ * `teamSchema`/`upsertTeam` for exactly that case.
+ */
+export const eventSchema = z.object({
+  id: z
+    .string()
+    .min(1)
+    .max(64)
+    .regex(/^[a-z0-9_-]+$/, "Event id must be lowercase letters, numbers, dashes or underscores"),
+  name: z.string().min(1).max(120),
+  division: z.enum(["sports", "cultural"]),
+  category: z.string().min(1).max(80),
+  scoringType: z.enum(["placement", "judged", "match", "participation"]),
+  medalWeight: z.number().int().min(0).max(100),
+  gender: z.enum(["M", "W", "M&W", "Open"]),
+  multiplier: z.number().min(0).max(10),
+  schedule: z.string().max(120).optional(),
+  venue: z.string().max(120).optional(),
+  status: z.enum(["upcoming", "live", "finished"]),
+  locked: z.boolean(),
+  verify: z.boolean().optional(),
+  note: z.string().max(400).optional(),
+});
+
 export const teamSchema = z.object({
   id: z
     .string()
@@ -128,6 +157,7 @@ export const commandSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("announce"), message: z.string().min(1).max(280), actor: z.string().default("system") }),
   z.object({ type: z.literal("updateConfig"), patch: configPatchSchema, actor: z.string().default("system") }),
   z.object({ type: z.literal("updateEvent"), id: z.string().min(1).max(64), patch: eventPatchSchema, actor: z.string().default("system") }),
+  z.object({ type: z.literal("upsertEvent"), event: eventSchema, actor: z.string().default("system") }),
   z.object({ type: z.literal("upsertTeam"), team: teamSchema, actor: z.string().default("system") }),
   z.object({ type: z.literal("deleteTeam"), id: z.string().min(1).max(32), actor: z.string().default("system") }),
   z.object({
