@@ -55,6 +55,7 @@ siglakas-*.json
 # kept out of the repo; the results they hold are recorded in the sheet by
 # scripts/record-saludo-mascot.ts, which cites them by filename.
 /OVERALL-*.pdf
+/*TABULATION*.pdf
 /Saludo criteria.jpg
 # Photograph of the official blank Mascot judge sheet — same reason, and it is
 # the source that confirms the entry-number -> crew mapping used above.
