@@ -166,6 +166,9 @@ export function WantedPoster({
   const isFirst = rank === 1;
   const accent = accentFor(team.color);
   const rgb = hexToRgbTriplet(accent);
+  // The medals now carry the card's display weight, so they scale with `dense`.
+  const medalIcon = dense ? 22 : 28;
+  const medalText = dense ? "text-lg font-bold" : "text-xl font-bold sm:text-2xl";
   return (
     <Link
       href={`/teams/${team.id}`}
@@ -208,11 +211,13 @@ export function WantedPoster({
           </h3>
           <p className="truncate text-[0.72rem] font-semibold text-[#5a4426]">{team.name}</p>
 
-          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
-            <span className="font-display text-lg text-[#7a2b12]" title={formatBounty(points)}>
-              <CountUp value={points} format={(n) => formatBounty(n)} />
-            </span>
-            <RankArrow change={rankChange} />
+          {/* The medal tally sits where the bounty used to: it is the thing the
+              board is read for, so it gets the display type and full-size
+              medals rather than a row of 16px icons. */}
+          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
+            <MedalCount kind="gold" value={<CountUp value={gold} />} size={medalIcon} className={medalText} />
+            <MedalCount kind="silver" value={<CountUp value={silver} />} size={medalIcon} className={medalText} />
+            <MedalCount kind="bronze" value={<CountUp value={bronze} />} size={medalIcon} className={medalText} />
           </div>
         </div>
 
@@ -225,9 +230,11 @@ export function WantedPoster({
       </div>
 
       <div className="relative mt-3 flex items-center gap-3 border-t border-[#8a6534]/30 pt-2 text-[0.72rem] font-semibold text-[#4a3618]">
-        <MedalCount kind="gold" value={<CountUp value={gold} />} />
-        <MedalCount kind="silver" value={<CountUp value={silver} />} />
-        <MedalCount kind="bronze" value={<CountUp value={bronze} />} />
+        {/* The bounty moved down here when the medals took its place. */}
+        <span className="font-display text-lg text-[#7a2b12]" title={formatBounty(points)}>
+          <CountUp value={points} format={(n) => formatBounty(n)} />
+        </span>
+        <RankArrow change={rankChange} />
         <span className="ml-auto truncate text-[#6b4a2b]" aria-hidden style={{ color: `rgb(${rgb} / 1)` }}>
           <span className="inline-block h-2.5 w-2.5 rounded-full align-middle" style={{ background: accent, boxShadow: `0 0 8px ${accent}` }} />
         </span>
