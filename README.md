@@ -18,7 +18,7 @@ projector *and* a phone, and never invent a number.
 
 1. **The Google Sheet is the source of truth.** The site never owns data — it reads
    and writes the sheet you nominate. Edit the sheet by hand if you like; the site
-   picks it up on the next poll (~5 seconds).
+   picks it up on the next poll (~60 seconds; see `SHEET_POLL_MS` below).
 2. **The site is a view plus a controlled write path.** All writes go through a
    permission-checked, audited command API. Nothing else writes to the sheet.
 
@@ -125,7 +125,7 @@ wording for official printouts.
 ## Architecture at a glance
 
 ```
-Google Sheet ──poll (~5s)──> state store (server singleton now-last-good)
+Google Sheet ──poll (~60s)─> state store (server singleton now-last-good)
                                    │
                     ┌──────────────┴───────────────┐
               SSE /api/stream              poll /api/state + /api/version
@@ -173,7 +173,7 @@ Copy `.env.example` to `.env.local`. Full detail is in that file; the short vers
 | `GOOGLE_SERVICE_ACCOUNT_JSON` | The key file as one line (**required on Vercel**) |
 | `GOOGLE_SERVICE_ACCOUNT_EMAIL` + `GOOGLE_PRIVATE_KEY` | Split-credential alternative |
 | `AUTH_SECRET` | ≥16 chars; signs the session cookie. Required in production |
-| `SHEET_POLL_MS` | Sheet poll interval, default `5000` |
+| `SHEET_POLL_MS` | Sheet poll interval, default `60000` (60s). Every poll is a ten-tab read, and Google counts the quota per range — so this is the lever on the 60 reads/min per service account. Lower it if you hand-edit the sheet and want it faster |
 
 Credential precedence is JSON → file → email+key, so a JSON variable set for a Vercel
 test also takes effect locally, overriding the file.

@@ -3,6 +3,40 @@ import { mergeMatchPlacements } from "../scoring/match";
 import { DEFAULT_CONFIG } from "./seed";
 import type { CompetitionState, Config, RawSheets } from "../types";
 
+/** The fields a crew can be referred to by, for `teamResolver`. */
+export interface TeamAlias {
+  id: string;
+  shortName?: string;
+  name?: string;
+  mascot?: string;
+}
+
+/**
+ * Resolve a crew reference that may be an id, a short name or a full name.
+ *
+ * `Results` and `Matches` are hand-edited in the sheet, and people type what
+ * they see — `B-LEC` rather than the id `bec`. The scorer used to look the value
+ * up in a Map keyed on the id alone and `continue` on a miss, so a "wrong"
+ * spelling was dropped *silently* and the crew simply lost its medals, with
+ * nothing anywhere saying so. That happened seven times in one afternoon.
+ *
+ * Matching is case- and punctuation-insensitive, so `B-LEC`, `b lec` and `blec`
+ * all reach `bec`. Values that resolve to nothing are returned untouched, so a
+ * genuine typo still shows up in `check-sheet` instead of being guessed at.
+ */
+export function teamResolver(teams: TeamAlias[]): (value: string) => string {
+  const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const index = new Map<string, string>();
+  for (const t of teams) {
+    // Id first, so a crew's own id always wins over another crew's stray alias.
+    for (const alias of [t.id, t.shortName, t.name, t.mascot ? `the ${t.mascot}` : ""]) {
+      const key = norm(alias ?? "");
+      if (key && !index.has(key)) index.set(key, t.id);
+    }
+  }
+  return (value) => index.get(norm(value ?? "")) ?? value;
+}
+
 /** Cheap, dependency-free, deterministic content hash (FNV-1a 32-bit). */
 export function hashString(input: string): string {
   let h = 0x811c9dc5;
@@ -28,12 +62,31 @@ export function deriveState(raw: RawSheets, options: DeriveOptions = {}): Compet
     ...sanitizeConfig(raw.config),
   };
 
+  /**
+   * Hand-edited crew references are normalised once, here, so every consumer
+   * downstream — the standings, event pages, the activity feed, the admin grid
+   * — sees a canonical id and nothing is dropped in silence. See `teamResolver`.
+   */
+  const resolveTeam = teamResolver(raw.teams);
+  const results = raw.results.map((r) => {
+    const teamId = resolveTeam(r.teamId);
+    return teamId === r.teamId ? r : { ...r, teamId };
+  });
+  const matches = raw.matches.map((m) => {
+    const teamA = resolveTeam(m.teamA);
+    const teamB = resolveTeam(m.teamB);
+    const winner = m.winner ? resolveTeam(m.winner) : m.winner;
+    return teamA === m.teamA && teamB === m.teamB && winner === m.winner
+      ? m
+      : { ...m, teamA, teamB, winner };
+  });
+
   const standings = buildStandings({
     teams: raw.teams,
     events: raw.events,
     // Completed brackets award 1st/2nd/3rd automatically (final + bronze-medal
     // match). Hand-entered results always take precedence.
-    results: mergeMatchPlacements(raw.results, raw.events, raw.matches),
+    results: mergeMatchPlacements(results, raw.events, matches),
     config,
     onlyPublished: true,
     previousRanks: options.previousRanks,
@@ -42,8 +95,8 @@ export function deriveState(raw: RawSheets, options: DeriveOptions = {}): Compet
   const versionSource = JSON.stringify({
     t: raw.teams,
     e: raw.events.map((e) => [e.id, e.status, e.locked, e.multiplier, e.medalWeight]),
-    r: raw.results,
-    m: raw.matches,
+    r: results,
+    m: matches,
     j: raw.judgeScores.length,
     c: raw.announcements.length,
     g: [config.championshipRankBy, config.pointsFreeze, config.revealMode, config.terminology, config.competitionName],
@@ -54,8 +107,8 @@ export function deriveState(raw: RawSheets, options: DeriveOptions = {}): Compet
     teams: raw.teams,
     events: raw.events,
     criteria: raw.criteria,
-    matches: raw.matches,
-    results: raw.results,
+    matches,
+    results,
     announcements: raw.announcements,
     userCount: raw.users.length,
     standings,

@@ -12,6 +12,7 @@
  */
 import { loadCredentialsFromEnv, parseAoa, SheetsClient } from "../src/lib/data/google";
 import { HEADERS, TABS } from "../src/lib/data/sheets-repo";
+import { teamResolver } from "../src/lib/data/derive";
 
 const EXPECTED_EVENTS = 98;
 const EXPECTED_TEAMS = 12;
@@ -124,16 +125,29 @@ async function main() {
   const teamIds = new Set(teams.map((t) => t.id));
   const eventIds = new Set(events.map((e) => e.id));
 
+  // A crew may be named by id, short name or full name — the app resolves all
+  // three (see `teamResolver` in derive.ts), so `B-LEC` in the team_id column is
+  // legitimate and must not be reported. Only a value that resolves to no crew
+  // is a problem, and a blank one still is.
+  const teamLookup = teamResolver(
+    teams.map((t) => ({ id: t.id, shortName: t.short_name, name: t.name, mascot: t.mascot })),
+  );
+  const resolves = (value: string) => teamIds.has(teamLookup((value ?? "").trim()));
+
   const orphans: string[] = [];
   for (const r of results) {
-    if (!eventIds.has(r.event_id)) orphans.push(`Results: unknown event_id "${r.event_id}"`);
-    else if (!teamIds.has(r.team_id)) orphans.push(`Results: unknown team_id "${r.team_id}" in ${r.event_id}`);
+    if (!eventIds.has(r.event_id)) {
+      orphans.push(`Results: unknown event_id "${r.event_id}"`);
+      continue;
+    }
+    if (!(r.team_id ?? "").trim()) orphans.push(`Results: blank team_id in ${r.event_id}`);
+    else if (!resolves(r.team_id)) orphans.push(`Results: unknown team_id "${r.team_id}" in ${r.event_id}`);
   }
   for (const m of matches) {
     if (!eventIds.has(m.event_id)) orphans.push(`Matches: unknown event_id "${m.event_id}"`);
     for (const field of ["team_a", "team_b", "winner"]) {
       const value = (m[field] ?? "").trim();
-      if (value && !teamIds.has(value)) orphans.push(`Matches: unknown ${field} "${value}" in ${m.id || "(no id)"}`);
+      if (value && !resolves(value)) orphans.push(`Matches: unknown ${field} "${value}" in ${m.id || "(no id)"}`);
     }
   }
   if (orphans.length) {

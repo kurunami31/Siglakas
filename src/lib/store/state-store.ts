@@ -175,11 +175,25 @@ class StateStore {
     }
   }
 
-  /** Start the background poller (sheets) or live simulator (demo). */
+  /**
+   * Start the background poller (sheets) or live simulator (demo).
+   *
+   * The sheets interval defaults to 60s, not the 15s this used to be. Every poll
+   * is a `batchGet` across all ten tabs, and Google counts that quota per
+   * *range*, not per call: one poll is 10 of the 60 read requests a service
+   * account gets per minute. At 15s that is 40/min from a single instance, so
+   * two serverless instances exhausted the quota outright and the live site
+   * stopped refreshing — which is exactly what happened.
+   *
+   * 60s is 10/min, which leaves room for six instances. It does not slow the
+   * app's own writes down at all: a command refreshes the store itself. This
+   * only governs how quickly a HAND EDIT typed directly into the sheet shows up,
+   * so lower it via `SHEET_POLL_MS` if you are hand-editing and want it faster.
+   */
   startLoops(): void {
     if (this.timer || typeof window !== "undefined") return;
     const demo = isDemoMode();
-    const interval = demo ? 8000 : Number(process.env.SHEET_POLL_MS ?? 15000);
+    const interval = demo ? 8000 : Number(process.env.SHEET_POLL_MS ?? 60000);
     this.timer = setInterval(async () => {
       if (demo && this.repo instanceof DemoRepository) {
         const rng = Math.random;

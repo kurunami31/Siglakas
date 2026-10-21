@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { toPublicState, toViewerState } from "@/lib/serialize";
 import { auditPayload } from "@/lib/data/audit-payload";
-import { deriveState } from "@/lib/data/derive";
+import { deriveState, teamResolver } from "@/lib/data/derive";
 import { DemoRepository } from "@/lib/data/demo-repo";
-import { DEFAULT_CONFIG, EVENTS, TEAMS, generateDemoData } from "@/lib/data/seed";
+import { DEFAULT_CONFIG, EVENTS, TEAMS, buildCriteria, generateDemoData } from "@/lib/data/seed";
 import { buildEventDetail, buildEventSummaries } from "@/lib/scoring/events";
 import { rankingRuleLabel } from "@/lib/scoring/medals";
 import { mergeMatchPlacements } from "@/lib/scoring/match";
@@ -305,6 +305,62 @@ describe("demo data", () => {
     for (const team of state.teams) {
       expect(pages.get(team.id) ?? 0, `${team.id} golds`).toBe(board.get(team.id) ?? 0);
     }
+  });
+});
+
+describe("crew references in hand-edited rows", () => {
+  it("resolves an id, a short name or a full name", () => {
+    const resolve = teamResolver(TEAMS);
+    expect(resolve("bec")).toBe("bec");
+    expect(resolve("B-LEC")).toBe("bec");
+    expect(resolve("b lec")).toBe("bec");
+    expect(resolve("blec")).toBe("bec");
+    expect(resolve("Banaybanay-Lupon Extension Campus")).toBe("bec");
+    expect(resolve("FACET")).toBe("facet");
+    expect(resolve("Faculty of Business and Management")).toBe("fbm");
+  });
+
+  it("leaves a genuine typo alone rather than guessing a crew", () => {
+    const resolve = teamResolver(TEAMS);
+    expect(resolve("not a crew")).toBe("not a crew");
+    expect(resolve("")).toBe("");
+  });
+
+  it("scores a row whose team_id is the short name, where it used to be dropped", () => {
+    // The bug: the crew column read "B-LEC" instead of the id `bec`, the scorer
+    // looked it up in a Map keyed on the id, missed, and `continue`d — so the
+    // medals vanished with nothing anywhere saying so. It happened seven times
+    // in one afternoon before anyone noticed.
+    const mascot = EVENTS.filter((e) => e.id === "mascot");
+    const raw = {
+      config: {},
+      teams: TEAMS.map((t) => ({ ...t })),
+      events: mascot.map((e) => ({ ...e })),
+      criteria: buildCriteria(mascot),
+      matches: [],
+      judgeScores: [],
+      announcements: [],
+      auditLog: [],
+      users: [],
+      results: [
+        {
+          eventId: "mascot",
+          teamId: "B-LEC",
+          placement: 3,
+          tie: false,
+          status: "published",
+          enteredBy: "super admin",
+          timestamp: "",
+        },
+      ],
+    } as unknown as RawSheets;
+
+    const state = deriveState(raw);
+    const bec = state.standings.find((s) => s.teamId === "bec")!;
+    expect(bec.overall.bronze).toBe(3); // mascot is weight 3
+    expect(bec.overall.totalMedals).toBe(3);
+    // and the row is normalised, so the UI's byId lookup finds the crew too
+    expect(state.results[0].teamId).toBe("bec");
   });
 });
 
