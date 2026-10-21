@@ -159,11 +159,23 @@ export class SheetsRepository implements Repository {
       count: num(r.count),
     }));
 
-    const announcements: Announcement[] = table(TABS.announcements).map((r) => ({
-      timestamp: r.timestamp,
-      message: r.message,
-      postedBy: r.posted_by,
-    }));
+    /**
+     * Newest first. The sheet stores them oldest-first because `announce`
+     * appends, but every consumer assumes [0] is the latest: the ticker takes
+     * the first six, the TV display the first five, and `providers` watches [0]
+     * to fire the "new announcement" toast. Left in sheet order the bulletin
+     * showed the OLDEST notices and the toast never fired at all.
+     *
+     * The demo repository already unshifted, which is why this never surfaced in
+     * demo mode — the difference only existed on the sheets path.
+     */
+    const announcements: Announcement[] = table(TABS.announcements)
+      .map((r) => ({
+        timestamp: r.timestamp,
+        message: r.message,
+        postedBy: r.posted_by,
+      }))
+      .reverse();
 
     const auditLog = table(TABS.auditLog).map((r) => ({
       timestamp: r.timestamp,
@@ -287,9 +299,11 @@ export class SheetsRepository implements Repository {
       case "announce": {
         const timestamp = new Date().toISOString();
         await this.client.append(`${TABS.announcements}!A1`, [[timestamp, command.message, command.actor]]);
+        // Prepend, so the in-memory state matches what `read()` returns
+        // (newest first) rather than the sheet's append order.
         raw.announcements = [
-          ...raw.announcements,
           { timestamp, message: command.message, postedBy: command.actor },
+          ...raw.announcements,
         ];
         break;
       }

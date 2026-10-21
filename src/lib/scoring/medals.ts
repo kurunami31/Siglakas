@@ -50,3 +50,26 @@ export function compareBreakdowns(
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
+
+/**
+ * A one-line description of how the standings are ordered, derived from the
+ * configured mode.
+ *
+ * The medal table used to hard-code "total medals → golds → silvers" while the
+ * config said `gold_first`, so the page described a rule it was not following —
+ * and the board visibly contradicted its own heading. Deriving it from the
+ * config means the sentence cannot drift away from the behaviour again.
+ */
+export function rankingRuleLabel(config: Config): string {
+  switch (config.championshipRankBy) {
+    case "weighted_points": {
+      const { gold, silver, bronze } = config.medalPoints;
+      return `Ranked by weighted points (gold ${gold} · silver ${silver} · bronze ${bronze})`;
+    }
+    case "total_medals":
+      return "Ranked by total medals → golds → silvers";
+    case "gold_first":
+    default:
+      return "Ranked by golds → silvers → bronzes";
+  }
+}

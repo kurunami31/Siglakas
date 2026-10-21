@@ -6,6 +6,7 @@ import { motion, useReducedMotion } from "motion/react";
 import type { DivisionOrOverall, Group } from "@/lib/types";
 import { accentFor } from "@/lib/format";
 import { buildMedalTable, applyGroupFilter, sortStandings } from "@/lib/scoring/rank";
+import { rankingRuleLabel } from "@/lib/scoring/medals";
 import { terms } from "@/lib/terminology";
 import { useLive } from "./providers";
 import { PrintButton } from "./print-button";
@@ -40,7 +41,10 @@ export function MedalTally() {
         <h1 id="medals-heading" className="font-display flex items-center gap-2 text-3xl text-parchment sm:text-4xl">
           <Icon name="medal" size={28} className="text-straw" /> Medal Tally
         </h1>
-        <p className="text-xs text-foam/75">Tie-break: total medals → golds → silvers</p>
+        {/* Derived from the configured ranking mode, never hand-written — this
+            sentence previously claimed "total medals → golds → silvers" while
+            the board sorted gold-first. */}
+        <p className="text-xs text-foam/75">{rankingRuleLabel(state.config)}</p>
         <PrintButton label="Print the tally" />
       </div>
 

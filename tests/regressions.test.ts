@@ -5,6 +5,7 @@ import { deriveState } from "@/lib/data/derive";
 import { DemoRepository } from "@/lib/data/demo-repo";
 import { DEFAULT_CONFIG, EVENTS, TEAMS, generateDemoData } from "@/lib/data/seed";
 import { buildEventDetail, buildEventSummaries } from "@/lib/scoring/events";
+import { rankingRuleLabel } from "@/lib/scoring/medals";
 import { mergeMatchPlacements } from "@/lib/scoring/match";
 import type { Command } from "@/lib/data/repo";
 import type { CompetitionState, Criterion, EventItem, JudgeScore, RawSheets, Result, Team } from "@/lib/types";
@@ -304,6 +305,24 @@ describe("demo data", () => {
     for (const team of state.teams) {
       expect(pages.get(team.id) ?? 0, `${team.id} golds`).toBe(board.get(team.id) ?? 0);
     }
+  });
+});
+
+describe("ranking rule label", () => {
+  const label = (mode: "gold_first" | "total_medals" | "weighted_points") =>
+    rankingRuleLabel({ ...DEFAULT_CONFIG, championshipRankBy: mode });
+
+  it("describes the mode that is actually configured", () => {
+    expect(label("gold_first")).toBe("Ranked by golds → silvers → bronzes");
+    expect(label("total_medals")).toBe("Ranked by total medals → golds → silvers");
+    expect(label("weighted_points")).toContain("gold 3 · silver 2 · bronze 1");
+  });
+
+  it("never claims total medals while the board sorts gold-first", () => {
+    // The medal table hard-coded "total medals → golds → silvers" while the
+    // config said gold_first, so it described a rule it was not using — and the
+    // live board disproved it: B-LEC had more medals than FTED and ranked below.
+    expect(label("gold_first")).not.toMatch(/total medals/i);
   });
 });
 
