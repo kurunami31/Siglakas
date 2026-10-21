@@ -246,7 +246,7 @@ describe("what the two results put on the medal board", () => {
 
   it("awards saludo 2 medals per placing and mascot 3", () => {
     // Saludo (weight 2): 1st FNAHS, 2nd FBM, 3rd FALS
-    // Mascot (weight 3): 1st FBM, 2nd FCJE, 3rd BEC
+    // Mascot (weight 3): 1st FBM, 2nd FCJE, 3rd B-LEC
     expect(medals("fnahs")).toMatchObject({ gold: 2, silver: 0, bronze: 0 });
     expect(medals("fbm")).toMatchObject({ gold: 3, silver: 2, bronze: 0 });
     expect(medals("fcje")).toMatchObject({ gold: 0, silver: 3, bronze: 0 });

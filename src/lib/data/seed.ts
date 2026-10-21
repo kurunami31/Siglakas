@@ -41,7 +41,10 @@ export const TEAMS: Team[] = [
   { id: "fnahs", name: "Faculty of Nursing and Allied Health Sciences", shortName: "FNAHS", group: "faculty", color: "#C29320", logoFile: "fnahs", mascot: "Pegasus", motto: "Heal, rise, ascend" },
   { id: "siec", name: "San Isidro Extension Campus", shortName: "SIEC", group: "extension_campus", color: "#FFDF22", logoFile: "siec", mascot: "Hornets", motto: "Small wings, sharp sting" },
   { id: "tec", name: "Tarragona Extension Campus", shortName: "TEC", group: "extension_campus", color: "#000000", logoFile: "tec", mascot: "Direwolves", motto: "The pack never sails alone" },
-  { id: "bec", name: "Banay-Banay Extension Campus", shortName: "BEC", group: "extension_campus", color: "#8b0000", logoFile: "bec", mascot: "Bulls", motto: "Charge without fear" },
+  // Banaybanay campus together with the Lupon external classes, hence the
+  // hyphenated short name. The id stays `bec` on purpose: every result, match
+  // and account already points at it, and changing an id orphans its data.
+  { id: "bec", name: "Banaybanay-Lupon Extension Campus", shortName: "B-LEC", group: "extension_campus", color: "#8b0000", logoFile: "bec", mascot: "Bulls", motto: "Charge without fear" },
   { id: "bgec", name: "Baganga Extension Campus", shortName: "BGEC", group: "extension_campus", color: "#59c9ae", logoFile: "bgec", mascot: "Bakunawa", motto: "From the deep, undefeated" },
   { id: "cec", name: "Cateel Extension Campus", shortName: "CEC", group: "extension_campus", color: "#080d61", logoFile: "cec", mascot: "Kraken", motto: "Many arms, one grip" },
 ];

@@ -38,6 +38,15 @@ describe("crew identities", () => {
     expect(TEAMS.map((t) => t.id).sort()).toEqual(Object.keys(OFFICIAL).sort());
   });
 
+  it("names the Banaybanay-Lupon crew as the Secretariat chose", () => {
+    // The crew absorbed the Lupon external classes, so it is B-LEC, not BEC.
+    // The id stays `bec` — results, matches and accounts all point at it, and an
+    // id change would orphan every one of them.
+    const crew = TEAMS.find((t) => t.id === "bec");
+    expect(crew?.shortName).toBe("B-LEC");
+    expect(crew?.name).toBe("Banaybanay-Lupon Extension Campus");
+  });
+
   it("corrects the sheet's typo rather than copying it", () => {
     // The sheet prints "Phyton" for FALS. That is a misspelling of Python, not
     // an identity, so it is the one string we deliberately do not reproduce.

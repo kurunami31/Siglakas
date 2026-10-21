@@ -6,7 +6,7 @@ import type { Team } from "./types";
  *     FTED 2 - 0 FACET
  *     FBM  1 - 2 FCJE
  *     CEC  vs  SIEC                 (scheduled, no score yet)
- *     BEC 3-1 TEC | 11-8, 11-9      (optional per-set detail after a pipe)
+ *     B-LEC 3-1 TEC | 11-8, 11-9     (optional per-set detail after a pipe)
  *
  * Crews are resolved by id, short name, mascot or full name, case- and
  * punctuation-insensitive, so "Phoenix", "phoenix" and "fted" all find
