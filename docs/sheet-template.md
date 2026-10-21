@@ -100,8 +100,11 @@ for you; hand-editing is fine too.
 - `multiplier` — scales the points (leave `1` unless an event is weighted).
 - `status` — `upcoming`, `live`, `finished`.
 - `locked` — `TRUE` means only the Secretariat may edit the event's results.
-- `verify` — `TRUE` flags the row for review. One event is flagged today:
-  `Live Band Competition` (see the note at the end of this page).
+- `verify` — `TRUE` flags the row for review: a `medal_weight` nobody has confirmed
+  against the manual. It is advisory, not enforced — a flagged event still scores
+  normally — so it exists purely to stop an unconfirmed number being forgotten. Run
+  `npm run check-sheet` to list the flagged events; the `Dashboard` shows them amber
+  (see the note at the end of this page).
 
 ### `Criteria` — judged events
 
@@ -194,9 +197,15 @@ npm run beautify-sheet   # re-apply colours, widths, banding, Dashboard and Guid
 session. It reports missing tabs, missing headers, unknown event ids, duplicate
 entries and criteria with a zero weight.
 
-### The one open question
+### Open `verify` flags
 
-`Live Band Competition` is flagged `verify`. The manual's printed line says **5**
-medals, but the sub-total of that section only adds up with **9**. Confirm the number
-with OSCAL, correct `medal_weight` on the `Events` tab, then clear the `verify` flag.
-Until then the row is amber on the `Dashboard`.
+Any event flagged `verify` is a `medal_weight` nobody has confirmed against the
+manual — usually because the printed line and that section's own sub-total
+disagreed. `npm run check-sheet` lists them; confirm each number with OSCAL,
+correct `medal_weight` on the `Events` tab, then clear the flag. Until then the row
+is amber on the `Dashboard`.
+
+The set changes as OSCAL works through it, so this page deliberately does not name
+specific events. The flag is advisory — a flagged event still scores normally — so
+an event left flagged by accident is a silent risk, which is why both the Dashboard
+and `check-sheet` keep pointing at it.

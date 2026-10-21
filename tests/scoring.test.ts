@@ -332,11 +332,15 @@ describe("seed catalogue integrity", () => {
     }
   });
 
-  it("has no unresolved weight discrepancies left", () => {
+  it("has no unresolved weight discrepancies left in the seed", () => {
     // Live Band was the last one open: the manual printed 5 for it while its
     // Music Arts sub-total only closed with 9. OSCAL confirmed the printed line,
-    // so nothing is left flagged — and the Music Arts expectation above now reads
+    // so the seed carries no flags — and the Music Arts expectation above reads
     // 39 rather than the manual's 43, which is the arithmetic consequence.
+    //
+    // `verify` is per-installation state, not seed data: the live sheet flags
+    // whatever OSCAL has not confirmed yet, which this test cannot see. Run
+    // `npm run check-sheet` for the real list.
     expect(EVENTS.filter((e) => e.verify)).toEqual([]);
   });
 });

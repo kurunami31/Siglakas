@@ -192,6 +192,7 @@ const RES_TEAM = "Results!$B$2:$B$2000";
 const RES_PLACE = "Results!$C$2:$C$2000";
 const RES_STATUS = "Results!$E$2:$E$2000";
 const RES_EVENT = "Results!$A$2:$A$2000";
+const RES_COUNT = "Results!$H$2:$H$2000";
 const EV_ID = "Events!$A$2:$A$500";
 const EV_DIV = "Events!$C$2:$C$500";
 const EV_CAT = "Events!$D$2:$D$500";
@@ -200,9 +201,55 @@ const EV_WEIGHT = "Events!$F$2:$F$500";
 const PUBLISHED = `(LOWER(${RES_STATUS})="published")`;
 const WEIGHT_OF = `SUMIF(${EV_ID},${RES_EVENT},${EV_WEIGHT})`;
 
-/** Medals for one crew, filtered by a placement condition. */
-function medals(teamCell: string, placementCondition: string): string {
-  return `=SUMPRODUCT((${RES_TEAM}=${teamCell})*(${placementCondition})*${PUBLISHED}*${WEIGHT_OF})`;
+/**
+ * Medals for one crew, filtered by a placement condition.
+ *
+ * The crew is matched on its id (helper column T) OR its short name (column U),
+ * because the `Results` tab is hand-edited and people write whichever they see —
+ * `B-LEC` for the crew whose id is `bec`. Matching only the id silently scored
+ * that crew zero here while the website (which resolves names) showed its medals,
+ * which is the worst possible outcome: two official-looking numbers disagreeing.
+ *
+ * Sheets compares text case-insensitively, so this also absorbs `FACET` vs
+ * `facet` without any normalisation.
+ */
+function crewMatch(row: number): string {
+  return `((${RES_TEAM}=$T${row})+(${RES_TEAM}=$U${row})>0)`;
+}
+
+function medals(row: number, placementCondition: string): string {
+  return `=SUMPRODUCT(${crewMatch(row)}*(${placementCondition})*${PUBLISHED}*${WEIGHT_OF})`;
+}
+
+/**
+ * Ids of the participation events (FUN RUN, FUNEBALL), read from the Events tab
+ * so the formula below cannot drift from the data.
+ */
+let participationIds: string[] = [];
+
+/**
+ * Golds for one crew — which is NOT simply `placement = 1`.
+ *
+ * A participation event has no placing: a crew earns one gold per ENTRANT, held
+ * in the `count` column. Counting it as one gold left the Dashboard tens of
+ * medals short of the website for the very same results, and the Overall
+ * Championship is decided on golds — so the two official-looking numbers
+ * disagreed exactly where it mattered most. Silver and bronze stay
+ * placement-based, because participation awards neither.
+ *
+ * The participation test compares the event-id range to literals, which is
+ * reliably an array. A `SUMIF(... ,criteria range, ...)` would have been tidier
+ * but collapses to a scalar inside SUMPRODUCT, so the IF always took the wrong
+ * branch — verified by reading the cell back, not by assuming.
+ */
+function golds(row: number): string {
+  const isParticipation = participationIds.length
+    ? `(${participationIds.map((id) => `(${RES_EVENT}="${id}")`).join("+")})`
+    : "0";
+  return (
+    `=SUMPRODUCT(${crewMatch(row)}*${PUBLISHED}*${WEIGHT_OF}` +
+    `*IF(${isParticipation},${RES_COUNT},(${RES_PLACE}=1)))`
+  );
 }
 
 const CATEGORIES = [
@@ -573,11 +620,19 @@ async function main() {
   /* ---------------------------------------------------------------- *
    * 4. Dashboard + Guide values
    * ---------------------------------------------------------------- */
-  const teamsRaw = (await client.batchGet([`${TABS.teams}!A1:Z`]))[TABS.teams] ?? [];
+  const source = await client.batchGet([`${TABS.teams}!A1:Z`, `${TABS.events}!A1:F`]);
+  const teamsRaw = source[TABS.teams] ?? [];
   const teams = teamsRaw
     .slice(1)
     .filter((r) => (r[0] ?? "").trim() !== "")
     .map((r) => ({ id: (r[0] ?? "").trim(), name: (r[2] ?? r[1] ?? "").trim(), full: (r[1] ?? "").trim() }));
+
+  // Which events pay one gold per entrant rather than by placing. Read rather
+  // than hard-coded, so adding a participation event stays a sheet edit.
+  participationIds = (source[TABS.events] ?? [])
+    .slice(1)
+    .filter((r) => (r[0] ?? "").trim() !== "" && (r[4] ?? "").trim().toLowerCase() === "participation")
+    .map((r) => (r[0] ?? "").trim());
 
   const grid: (string | number)[][] = Array.from({ length: 46 }, () => Array.from({ length: 26 }, () => ""));
   const put = (row: number, col: number, v: string | number) => {
@@ -625,10 +680,11 @@ async function main() {
     const row = 9 + i;
     put(row, 19, t.id);
     put(row, 20, t.name || t.full || t.id);
-    put(row, 21, medals(`$T${row}`, `(${RES_PLACE}=1)`));
-    put(row, 22, medals(`$T${row}`, `(${RES_PLACE}=2)`));
-    put(row, 23, medals(`$T${row}`, `(${RES_PLACE}=3)`));
-    put(row, 24, medals(`$T${row}`, `(${RES_PLACE}>=1)*(${RES_PLACE}<=3)`));
+    put(row, 21, golds(row));
+    put(row, 22, medals(row, `(${RES_PLACE}=2)`));
+    put(row, 23, medals(row, `(${RES_PLACE}=3)`));
+    // Total is simply the three columns, so it cannot drift from them.
+    put(row, 24, `=$V${row}+$W${row}+$X${row}`);
   });
 
   put(23, 0, "Medals at stake by category");
@@ -712,7 +768,7 @@ async function main() {
   g(33, 0, "BEFORE COMPETITION DAY");
   const checklist = [
     "Run  npm run check-sheet  — it verifies every tab, header, event id and criterion weight.",
-    "Confirm the one event still flagged \"verify\" (Live Band Competition) with OSCAL: the printed line says 5 but its own sub-total of 43 only adds up with 9.",
+    "Clear the \"verify\" flags: check-sheet lists them, confirm each event's medal_weight with OSCAL, then untick verify on the Events tab. They show amber below until you do.",
     "Check the Config tab: championship rule, competition name, and whether point freeze / reveal mode should be off.",
     "Create one login per PIO, and a separate Secretariat account. Do not share accounts — the audit log names the account, not the person.",
     "Do a dress rehearsal: enter a result, publish it, watch the Dashboard and the website update.",

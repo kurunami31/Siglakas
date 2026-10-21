@@ -6,8 +6,8 @@ Print this. Work top to bottom. Times are relative to the opening ceremony.
 
 ## The day before (T-24h)
 
-- [ ] **Confirm the `Live Band Competition` medal weight** with OSCAL; set it on the
-      `Events` tab and clear the `verify` flag.
+- [ ] **Clear the `verify` flags** — run `npm run check-sheet` to list them, confirm
+      each event's `medal_weight` with OSCAL, then untick `verify` on the `Events` tab.
 - [ ] **Rotate the Super Admin password** and create one account per PIO/Secretariat
       member from **Admin → Accounts**. No shared logins.
 - [ ] **Run the health check** — `npm run check-sheet`. It must report no problems.

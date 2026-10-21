@@ -13,12 +13,16 @@ scores.
 
 ## Before competition day
 
-### 1. Confirm the open question
+### 1. Clear the `verify` flags
 
-`Live Band Competition` is flagged `verify` on the `Events` tab. The manual's printed
-line says **5** medals; that section's own sub-total only reaches its total with **9**.
-Get OSCAL to confirm, set `medal_weight` accordingly, then clear the `verify` flag.
-The `Dashboard` tab shows the row amber until you do.
+`npm run check-sheet` lists every event still flagged `verify`. Each one is a
+`medal_weight` nobody has confirmed against the manual, usually because the
+printed line and that section's own sub-total disagreed. Get OSCAL to confirm the
+number, set `medal_weight` on the `Events` tab, then untick `verify`. The
+`Dashboard` shows the row amber until you do, and `check-sheet` keeps warning.
+
+The flag is advisory — a flagged event still scores normally — so it is easy to
+leave one behind by accident. That is exactly why the Dashboard colours it.
 
 ### 2. Hand out the logins
 
