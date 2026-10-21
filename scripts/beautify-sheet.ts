@@ -217,39 +217,38 @@ function crewMatch(row: number): string {
   return `((${RES_TEAM}=$T${row})+(${RES_TEAM}=$U${row})>0)`;
 }
 
+/**
+ * How many medals a single row awards: `count` when it is filled, otherwise the
+ * event's weight.
+ *
+ * `count` is for the aggregate events — swimming is twelve races in one row,
+ * Chinese Garter and the badminton draws are two categories each — where several
+ * crews legitimately share a placing. Giving every one of them the event's whole
+ * weight handed out more medals than the sport contains. Blank or zero keeps the
+ * roster behaviour, where the weight IS the answer (basketball's five players).
+ */
+const MEDALS_OF = `IF(${RES_COUNT}>0,${RES_COUNT},${WEIGHT_OF})`;
+
 function medals(row: number, placementCondition: string): string {
-  return `=SUMPRODUCT(${crewMatch(row)}*(${placementCondition})*${PUBLISHED}*${WEIGHT_OF})`;
+  return `=SUMPRODUCT(${crewMatch(row)}*(${placementCondition})*${PUBLISHED}*${MEDALS_OF})`;
 }
 
 /**
- * Ids of the participation events (FUN RUN, FUNEBALL), read from the Events tab
- * so the formula below cannot drift from the data.
- */
-let participationIds: string[] = [];
-
-/**
- * Golds for one crew — which is NOT simply `placement = 1`.
+ * Golds for one crew.
  *
- * A participation event has no placing: a crew earns one gold per ENTRANT, held
- * in the `count` column. Counting it as one gold left the Dashboard tens of
- * medals short of the website for the very same results, and the Overall
- * Championship is decided on golds — so the two official-looking numbers
- * disagreed exactly where it mattered most. Silver and bronze stay
- * placement-based, because participation awards neither.
+ * A participation event is entered at placement 1 with `count` = the number of
+ * entrants and `medal_weight` = 1, so `MEDALS_OF × (placement = 1)` already
+ * yields one gold per entrant — FUN RUN with 48 entrants gives 48 golds, exactly
+ * as the website computes it. Silver and bronze stay placement-based, which
+ * excludes participation on its own since those rows sit at placement 1.
  *
- * The participation test compares the event-id range to literals, which is
- * reliably an array. A `SUMIF(... ,criteria range, ...)` would have been tidier
- * but collapses to a scalar inside SUMPRODUCT, so the IF always took the wrong
- * branch — verified by reading the cell back, not by assuming.
+ * This deliberately has NO participation special-case. The obvious version —
+ * `IF(event is FUN RUN or FUNEBALL, count × weight, placement × MEDALS_OF)` —
+ * mixes a criteria range of one length with branch arrays of another, and Sheets
+ * returns #N/A for the whole cell. Every array here is the same length instead.
  */
 function golds(row: number): string {
-  const isParticipation = participationIds.length
-    ? `(${participationIds.map((id) => `(${RES_EVENT}="${id}")`).join("+")})`
-    : "0";
-  return (
-    `=SUMPRODUCT(${crewMatch(row)}*${PUBLISHED}*${WEIGHT_OF}` +
-    `*IF(${isParticipation},${RES_COUNT},(${RES_PLACE}=1)))`
-  );
+  return medals(row, `(${RES_PLACE}=1)`);
 }
 
 const CATEGORIES = [
@@ -620,19 +619,11 @@ async function main() {
   /* ---------------------------------------------------------------- *
    * 4. Dashboard + Guide values
    * ---------------------------------------------------------------- */
-  const source = await client.batchGet([`${TABS.teams}!A1:Z`, `${TABS.events}!A1:F`]);
-  const teamsRaw = source[TABS.teams] ?? [];
+  const teamsRaw = (await client.batchGet([`${TABS.teams}!A1:Z`]))[TABS.teams] ?? [];
   const teams = teamsRaw
     .slice(1)
     .filter((r) => (r[0] ?? "").trim() !== "")
     .map((r) => ({ id: (r[0] ?? "").trim(), name: (r[2] ?? r[1] ?? "").trim(), full: (r[1] ?? "").trim() }));
-
-  // Which events pay one gold per entrant rather than by placing. Read rather
-  // than hard-coded, so adding a participation event stays a sheet edit.
-  participationIds = (source[TABS.events] ?? [])
-    .slice(1)
-    .filter((r) => (r[0] ?? "").trim() !== "" && (r[4] ?? "").trim().toLowerCase() === "participation")
-    .map((r) => (r[0] ?? "").trim());
 
   const grid: (string | number)[][] = Array.from({ length: 46 }, () => Array.from({ length: 26 }, () => ""));
   const put = (row: number, col: number, v: string | number) => {

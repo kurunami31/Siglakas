@@ -66,9 +66,18 @@ async function main() {
   for (const k of keys) {
     const { headers, rows } = parseAoa(read[TABS[k]] ?? []);
     tables[k] = rows;
-    const headerOk = headers.join("|") === HEADERS[k].join("|");
+    // The app's own columns must match, in order — but the sheet is allowed
+    // extra TRAILING columns the app does not manage, e.g. the `note` column the
+    // Secretariat added to Results to annotate rows. Those are reported, not
+    // treated as a fault, and app writes only ever touch the columns before them.
+    const missing = HEADERS[k].filter((h, i) => headers[i] !== h);
+    const headerOk = missing.length === 0;
+    const extra = headers.slice(HEADERS[k].length).filter((h) => h && h.trim() !== "");
     if (!headerOk) problems.push(`${TABS[k]}: header row does not match (found: ${headers.join(", ")})`);
-    console.log(`  ${TABS[k].padEnd(14)} ${String(rows.length).padStart(5)} rows${headerOk ? "" : "   <- HEADER MISMATCH"}`);
+    console.log(
+      `  ${TABS[k].padEnd(14)} ${String(rows.length).padStart(5)} rows` +
+        (extra.length ? `   (+${extra.length} extra: ${extra.join(", ")})` : ""),
+    );
   }
 
   const teams = tables.teams ?? [];
@@ -156,6 +165,50 @@ async function main() {
         orphans.slice(0, 5).join("; ") +
         (orphans.length > 5 ? ` (+${orphans.length - 5} more)` : ""),
     );
+  }
+
+  /**
+   * No event can award more medals of a colour than it has.
+   *
+   * Several crews sharing a placing is legitimate ONLY for the count-based
+   * aggregates — swimming is twelve races in one row, Chinese Garter and the
+   * badminton draws are two categories each — and there each row's `count` says
+   * how many that crew actually won. Without a count the whole weight goes to
+   * every crew at that placing, which is how swimming once awarded 60 golds from
+   * a programme containing 24. Reported as a problem, not a warning: this is the
+   * silent inflation of the column the championship is decided on.
+   */
+  const weightOf = new Map(events.map((e) => [e.id, Number(e.medal_weight || 0)]));
+  const typeOf = new Map(events.map((e) => [e.id, (e.scoring_type ?? "").trim().toLowerCase()]));
+  const rowsByEvent = new Map<string, Array<Record<string, string>>>();
+  for (const r of results) {
+    const list = rowsByEvent.get(r.event_id);
+    if (list) list.push(r);
+    else rowsByEvent.set(r.event_id, [r]);
+  }
+  for (const [eventId, rows] of rowsByEvent) {
+    // Participation pays per entrant by definition, so "more than exist" is the
+    // whole point there.
+    if (typeOf.get(eventId) === "participation") continue;
+    const available = weightOf.get(eventId) ?? 0;
+    if (available === 0) continue;
+    for (const [place, colour] of [[1, "gold"], [2, "silver"], [3, "bronze"]] as const) {
+      const atPlace = rows.filter((r) => Number(r.placement) === place);
+      if (atPlace.length < 2) continue;
+      const awarded = atPlace.reduce(
+        (n, r) => n + (Number(r.count || 0) > 0 ? Number(r.count) : available),
+        0,
+      );
+      if (awarded > available) {
+        problems.push(
+          `Events: "${eventId}" awards ${awarded} ${colour} but only ${available} exist — ` +
+            `${atPlace.length} rows share placing ${place}` +
+            (atPlace.some((r) => Number(r.count || 0) > 0)
+              ? ", so check the `count` column adds up"
+              : ", which needs a `count` on each row (aggregate event?)"),
+        );
+      }
+    }
   }
 
   // Only "published" counts towards the board; anything else is a draft.

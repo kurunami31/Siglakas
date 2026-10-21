@@ -382,6 +382,82 @@ describe("ranking rule label", () => {
   });
 });
 
+describe("aggregate events — a placing shared by several crews", () => {
+  const rawFor = (
+    eventId: string,
+    rows: Array<{ teamId: string; placement: number; count?: number }>,
+  ): RawSheets => {
+    const events = EVENTS.filter((e) => e.id === eventId);
+    return {
+      config: {},
+      teams: TEAMS.map((t) => ({ ...t })),
+      events: events.map((e) => ({ ...e })),
+      criteria: buildCriteria(events),
+      matches: [],
+      judgeScores: [],
+      announcements: [],
+      auditLog: [],
+      users: [],
+      results: rows.map((r) => ({
+        eventId,
+        teamId: r.teamId,
+        placement: r.placement,
+        count: r.count ?? 0,
+        tie: false,
+        status: "published" as const,
+        enteredBy: "tester",
+        timestamp: "",
+      })),
+    } as unknown as RawSheets;
+  };
+  const goldsOf = (state: CompetitionState, teamId: string) =>
+    state.standings.find((s) => s.teamId === teamId)!.overall.gold;
+
+  it("uses the row's count instead of the event's whole weight", () => {
+    // Swimming is twelve races in one row, so two crews can both be "1st".
+    // Before: each was credited with all twelve golds — 24 from a programme of
+    // 24, which is what put BGEC on 78 instead of 68.
+    const state = deriveState(
+      rawFor("swimming-m", [
+        { teamId: "facet", placement: 1, count: 7 },
+        { teamId: "fbm", placement: 1, count: 5 },
+      ]),
+    );
+    expect(goldsOf(state, "facet")).toBe(7);
+    expect(goldsOf(state, "fbm")).toBe(5);
+  });
+
+  it("never awards more than the event actually contains", () => {
+    const state = deriveState(
+      rawFor("swimming-m", [
+        { teamId: "facet", placement: 1, count: 7 },
+        { teamId: "fbm", placement: 1, count: 5 },
+      ]),
+    );
+    const total = TEAMS.reduce((n, t) => n + goldsOf(state, t.id), 0);
+    expect(total).toBe(12); // swimming-m's medal_weight
+  });
+
+  it("keeps the weight when count is blank, so rosters still work", () => {
+    // Basketball: five players, each medalling for the team's placing.
+    const state = deriveState(rawFor("basketball-m", [{ teamId: "facet", placement: 1 }]));
+    expect(goldsOf(state, "facet")).toBe(5);
+  });
+
+  it("uses the count for silver and bronze too, but only on that placing", () => {
+    const state = deriveState(
+      rawFor("swimming-m", [
+        { teamId: "facet", placement: 2, count: 3 },
+        { teamId: "fbm", placement: 3, count: 4 },
+      ]),
+    );
+    const facet = state.standings.find((s) => s.teamId === "facet")!.overall;
+    const fbm = state.standings.find((s) => s.teamId === "fbm")!.overall;
+    expect([facet.gold, facet.silver, facet.bronze]).toEqual([0, 3, 0]);
+    expect([fbm.gold, fbm.silver, fbm.bronze]).toEqual([0, 0, 4]);
+  });
+});
+
 describe("judged events", () => {
   const crew = (id: string, name: string): Team => ({
     id,

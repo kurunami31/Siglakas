@@ -87,11 +87,29 @@ export function buildStandings(input: BuildStandingsInput): TeamStanding[] {
     const medal = medalKindForPlacement(r.placement);
     const weight = event.medalWeight; // medals are physical counts → no multiplier
 
+    /**
+     * `count` on a placement row means "this crew won THAT MANY medals of this
+     * colour here", and it overrides the weight.
+     *
+     * It exists for the aggregate events: swimming is twelve races in one row
+     * (six per sex, two of them worth four), and Chinese Garter is two
+     * categories. Several crews therefore share a placing legitimately, and
+     * awarding each of them the event's whole weight handed out more medals than
+     * the sport contains — 60 golds from a swimming programme that has 24, and
+     * 4 from a game with 2. `count` is the crew's actual haul; blank or zero
+     * keeps the roster behaviour, where the weight IS the answer (basketball's
+     * five players all medal for the team's placing).
+     *
+     * `medal_weight` still means the event's total at stake per colour, so the
+     * `medalsAtStake` figure and the health check are unaffected.
+     */
+    const medalsWon = r.count && r.count > 0 ? r.count : weight;
+
     const applyTo = (b: ScoreBreakdown) => {
       const next = { ...b, points: round2(b.points + points) };
-      if (medal === "gold") next.gold += weight;
-      if (medal === "silver") next.silver += weight;
-      if (medal === "bronze") next.bronze += weight;
+      if (medal === "gold") next.gold += medalsWon;
+      if (medal === "silver") next.silver += medalsWon;
+      if (medal === "bronze") next.bronze += medalsWon;
       next.totalMedals = next.gold + next.silver + next.bronze;
       next.medalPoints = round2(
         next.gold * config.medalPoints.gold +
