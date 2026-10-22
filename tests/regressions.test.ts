@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { toPublicState, toViewerState } from "@/lib/serialize";
+import { isBoardClosed, stateForViewer, toPublicState, toViewerState } from "@/lib/serialize";
+import { configRows } from "@/lib/data/sheets-repo";
 import { auditPayload } from "@/lib/data/audit-payload";
 import { deriveState, teamResolver } from "@/lib/data/derive";
 import { DemoRepository } from "@/lib/data/demo-repo";
@@ -49,6 +50,91 @@ describe("draft visibility", () => {
 
   it("still strips drafts from everything else", () => {
     expect(toPublicState(stateWith([result("draft")])).results).toEqual([]);
+  });
+});
+
+/**
+ * The maintenance switch exists because the results were reconciled against the
+ * committee's sheets while the site was live, and a half-corrected board is
+ * worse than a closed one. Closing has to be total — pages and both live feeds —
+ * and must never lock the crew out of the tool they closed the board to use.
+ */
+describe("maintenance switch", () => {
+  const raw = (config: Record<string, unknown>): RawSheets =>
+    ({
+      config,
+      teams: [
+        { id: "t1", name: "Crew One", shortName: "T1", group: "faculty", color: "#ffffff", logoFile: "t1", mascot: "" },
+      ],
+      events: [
+        {
+          id: "e1",
+          name: "Event One",
+          division: "sports",
+          category: "Team Sports",
+          scoringType: "placement",
+          medalWeight: 3,
+          gender: "Open",
+          multiplier: 1,
+          status: "finished",
+          locked: false,
+        },
+      ],
+      criteria: [],
+      matches: [],
+      judgeScores: [],
+      results: [result("published", "t1")],
+      announcements: [],
+      auditLog: [],
+      users: [],
+    }) as unknown as RawSheets;
+
+  const open = deriveState(raw({}));
+  const closed = deriveState(raw({ maintenance: true }));
+
+  it("is off by default", () => {
+    expect(DEFAULT_CONFIG.maintenance).toBe(false);
+    expect(isBoardClosed(open, null)).toBe(false);
+    expect(stateForViewer(open, null).standings).toHaveLength(1);
+  });
+
+  it("closes for anonymous viewers and stays open for every staff role", () => {
+    expect(isBoardClosed(closed, null)).toBe(true);
+    for (const role of ["pio", "secretariat", "superadmin"] as const) {
+      expect(isBoardClosed(closed, role)).toBe(false);
+      expect(stateForViewer(closed, role).results).toHaveLength(1);
+      expect(stateForViewer(closed, role).standings).toHaveLength(1);
+    }
+  });
+
+  /**
+   * The public payload carries no scoring at all while closed — not even the
+   * standings — but keeps the config, which is how the client knows why it is
+   * shut and can reopen itself, and the roster, which is on the programme anyway.
+   */
+  it("serves a board with no scoring in it", () => {
+    const view = stateForViewer(closed, null);
+    expect(view.config.maintenance).toBe(true);
+    expect(view.results).toEqual([]);
+    expect(view.matches).toEqual([]);
+    expect(view.standings).toEqual([]);
+    expect(view.teams).toHaveLength(1);
+  });
+
+  /** A hand-edited Config cell must not be able to shut the site down. */
+  it("only accepts a real boolean", () => {
+    expect(deriveState(raw({ maintenance: "yes" })).config.maintenance).toBe(false);
+    expect(deriveState(raw({ maintenance: "" })).config.maintenance).toBe(false);
+  });
+
+  /** Clients discover the switch through the version hash, so it has to change. */
+  it("changes the version when it flips", () => {
+    expect(closed.version).not.toBe(open.version);
+  });
+
+  it("round-trips through the Config tab", () => {
+    expect(configRows({ ...DEFAULT_CONFIG, maintenance: true })).toContainEqual(["maintenance", "TRUE"]);
+    expect(configRows(DEFAULT_CONFIG)).toContainEqual(["maintenance", "FALSE"]);
   });
 });
 

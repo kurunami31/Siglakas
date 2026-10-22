@@ -729,9 +729,9 @@ async function main() {
   const tabDocs: Array<[string, string, string]> = [
     ["Dashboard", "nobody — generated", "Live overall medal table and summaries, calculated from Results and Events."],
     ["Guide", "nobody — this page", "The page you are reading."],
-    ["Config", "you (Secretariat)", "Competition name, championship rule, medal points, terminology."],
+    ["Config", "you (Secretariat)", "Competition name, championship rule, medal points, terminology, maintenance switch."],
     ["Teams", "you (Secretariat)", "The 12 crews: name, short name, group (faculty or extension campus), colours, mascot."],
-    ["Events", "you (Secretariat)", "All 98 events with division, category, how they are scored, and their medal weight."],
+    ["Events", "you (Secretariat)", "All 109 events with division, category, how they are scored, and their medal weight."],
     ["Criteria", "you (Secretariat)", "The judging criteria and weights for every judged event. Weights must total 100."],
     ["Matches", "PIO via the website", "Fixtures and scores for team sports and e-sports. A completed Final decides 1st and 2nd; a Bronze Medal Match decides 3rd."],
     ["JudgeScores", "PIO via the website", "One row per judge, per criterion, per crew. Large — do not hand-edit."],
@@ -750,7 +750,7 @@ async function main() {
   g(26, 0, "HOW A CREW WINS");
   const win = [
     "Every published placement earns medals equal to that event's medal_weight: 1st = gold, 2nd = silver, 3rd = bronze. 4th place and below earn nothing.",
-    "Sports (266 medals across 53 events) and socio-cultural (162 medals across 45 events) both count towards one Overall Championship, so 428 medals are at stake in total. FUN RUN and FUNEBALL are participation events: each participant earns one gold.",
+    "Sports (266 medals across 53 events) and socio-cultural (160 medals across 56 events) both count towards one Overall Championship, so 426 medals are at stake in total. FUN RUN and FUNEBALL are participation events: each participant earns one gold. Dance Sports is scored per discipline — twelve separate events, one medal each.",
     "Judged events are scored by their criteria; match events are decided by the bracket; the rest are decided by the placement you enter.",
     "Drafts let the PIO check a result before the public sees it. Nothing counts until it is Published.",
   ];
@@ -760,7 +760,7 @@ async function main() {
   const checklist = [
     "Run  npm run check-sheet  — it verifies every tab, header, event id and criterion weight.",
     "Clear the \"verify\" flags: check-sheet lists them, confirm each event's medal_weight with OSCAL, then untick verify on the Events tab. They show amber below until you do.",
-    "Check the Config tab: championship rule, competition name, and whether point freeze / reveal mode should be off.",
+    "Check the Config tab: championship rule, competition name, whether point freeze / reveal mode should be off, and that maintenance is off.",
     "Create one login per PIO, and a separate Secretariat account. Do not share accounts — the audit log names the account, not the person.",
     "Do a dress rehearsal: enter a result, publish it, watch the Dashboard and the website update.",
   ];

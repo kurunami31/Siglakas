@@ -14,16 +14,18 @@ import { loadCredentialsFromEnv, parseAoa, SheetsClient } from "../src/lib/data/
 import { HEADERS, TABS } from "../src/lib/data/sheets-repo";
 import { teamResolver } from "../src/lib/data/derive";
 
-const EXPECTED_EVENTS = 98;
+const EXPECTED_EVENTS = 109;
 const EXPECTED_TEAMS = 12;
-// sports 266 + socio-cultural 162. Three changes from the original manual
-// figures: Live Band's weight was confirmed at 5 (was 9); FUN RUN / FUNEBALL
-// became participation events whose weight is 1 (they were 50 and 10), because
-// their golds now come from each crew's participant count rather than a fixed
-// weight; and the Saludo (2) was added as a competition of its own, which the
-// printed socio-cultural point system predates. Changing an event's weight means
-// keeping the Guide text in beautify-sheet.ts and the docs in step too.
-const EXPECTED_MEDALS = 428;
+// sports 266 + socio-cultural 160. Four changes from the original manual figures:
+// Live Band's weight was confirmed at 5 (was 9); FUN RUN / FUNEBALL became
+// participation events whose weight is 1 (they were 50 and 10), because their
+// golds come from each crew's participant count rather than a fixed weight; the
+// Saludo (2) was added as a competition of its own, which the printed
+// socio-cultural point system predates; and Dance Sports became twelve
+// disciplines at weight 1 rather than one event at 14, matching the committee's
+// own result sheet. Changing a weight means keeping the Guide text in
+// beautify-sheet.ts and the docs in step too.
+const EXPECTED_MEDALS = 426;
 
 function loadEnvFiles() {
   const loader = (process as unknown as { loadEnvFile?: (p: string) => void }).loadEnvFile;
@@ -195,6 +197,18 @@ async function main() {
     for (const [place, colour] of [[1, "gold"], [2, "silver"], [3, "bronze"]] as const) {
       const atPlace = rows.filter((r) => Number(r.placement) === place);
       if (atPlace.length < 2) continue;
+      /**
+       * A shared placing is only suspicious when a row says NOTHING about how
+       * much it won. A `count` is the crew's actual haul, and a declared tie (or
+       * the manual's "double bronze", where two crews share third) is a
+       * legitimate result — neither is the bug this guards. A blank is: the
+       * event's whole weight then goes to every row at that placing, which is how
+       * swimming awarded 60 golds from a programme containing 24.
+       */
+      const explained = atPlace.every(
+        (r) => Number(r.count || 0) > 0 || String(r.tie ?? "").toUpperCase() === "TRUE",
+      );
+      if (explained) continue;
       const awarded = atPlace.reduce(
         (n, r) => n + (Number(r.count || 0) > 0 ? Number(r.count) : available),
         0,

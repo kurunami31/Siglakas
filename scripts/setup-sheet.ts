@@ -74,6 +74,17 @@ const boolRule = () => {
   return listRule(["TRUE", "FALSE"]);
 };
 
+/**
+ * Drop-down options for the crew columns.
+ *
+ * Ids *and* short names. The sheet's crew columns are hand-edited during the
+ * festival and `teamResolver` deliberately accepts either form (see
+ * `src/lib/data/derive.ts`), so a dropdown offering only ids would flag cells
+ * the reader resolves perfectly well — which is exactly what happened when a
+ * crew was renamed to its printed abbreviation.
+ */
+const TEAM_OPTIONS = [...TEAMS.map((t) => t.id), ...TEAMS.map((t) => t.shortName)];
+
 const VALIDATION: Array<{
   tab: TabKey;
   field: string;
@@ -101,15 +112,15 @@ const VALIDATION: Array<{
   // the scorer cannot resolve the row and drops it *silently*, with no error on
   // the site and no clue in the sheet.
   { tab: "results", field: "event_id", rule: () => listRule(EVENTS.map((e) => e.id)), hint: "Pick an island id from the Events tab" },
-  { tab: "results", field: "team_id", rule: () => listRule(TEAMS.map((t) => t.id)), hint: "Pick a crew id from the Teams tab" },
+  { tab: "results", field: "team_id", rule: () => listRule(TEAM_OPTIONS), hint: "Pick a crew id (or short name) from the Teams tab" },
   { tab: "results", field: "placement", rule: () => numberRule(0, 12), hint: "1-12, or 0 for participation" },
   { tab: "results", field: "tie", rule: boolRule, hint: "TRUE / FALSE" },
   { tab: "results", field: "status", rule: () => listRule(["draft", "published"]), hint: "draft or published - only published counts" },
   { tab: "results", field: "count", rule: () => numberRule(0, 500), hint: "Participants (participation events only: 1 gold each)" },
   { tab: "matches", field: "event_id", rule: () => listRule(EVENTS.map((e) => e.id)), hint: "Pick an island id from the Events tab" },
-  { tab: "matches", field: "team_a", rule: () => listRule(TEAMS.map((t) => t.id)), hint: "Pick a crew id from the Teams tab" },
-  { tab: "matches", field: "team_b", rule: () => listRule(TEAMS.map((t) => t.id)), hint: "Pick a crew id from the Teams tab" },
-  { tab: "matches", field: "winner", rule: () => listRule(TEAMS.map((t) => t.id)), hint: "Crew id of the winner, or blank" },
+  { tab: "matches", field: "team_a", rule: () => listRule(TEAM_OPTIONS), hint: "Pick a crew id (or short name) from the Teams tab" },
+  { tab: "matches", field: "team_b", rule: () => listRule(TEAM_OPTIONS), hint: "Pick a crew id (or short name) from the Teams tab" },
+  { tab: "matches", field: "winner", rule: () => listRule(TEAM_OPTIONS), hint: "Crew id (or short name) of the winner, or blank" },
   { tab: "users", field: "role", rule: () => listRule(["pio", "secretariat", "superadmin"]), hint: "pio, secretariat or superadmin" },
   { tab: "users", field: "active", rule: boolRule, hint: "TRUE / FALSE" },
 ];

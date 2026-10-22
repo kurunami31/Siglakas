@@ -15,6 +15,7 @@ interface FormState {
   terminology: "onepiece" | "plain";
   pointsFreeze: boolean;
   revealMode: boolean;
+  maintenance: boolean;
   gold: number;
   silver: number;
   bronze: number;
@@ -31,6 +32,7 @@ function fromConfig(c: Config): FormState {
     terminology: c.terminology,
     pointsFreeze: c.pointsFreeze,
     revealMode: c.revealMode,
+    maintenance: c.maintenance,
     gold: c.medalPoints.gold,
     silver: c.medalPoints.silver,
     bronze: c.medalPoints.bronze,
@@ -67,6 +69,7 @@ export function PointSystem() {
         terminology: form.terminology,
         pointsFreeze: form.pointsFreeze,
         revealMode: form.revealMode,
+        maintenance: form.maintenance,
         medalPoints: {
           gold: Number(form.gold) || 0,
           silver: Number(form.silver) || 0,
@@ -249,6 +252,19 @@ export function PointSystem() {
           />
           <span>
             <strong>Dramatic reveal.</strong> Play the treasure-chest reveal animation when the freeze lifts.
+          </span>
+        </label>
+        <label className="flex items-start gap-2.5 text-sm text-parchment/90">
+          <input
+            type="checkbox"
+            className="mt-1 size-6 shrink-0 accent-straw"
+            checked={form.maintenance}
+            onChange={(e) => set("maintenance", e.target.checked)}
+          />
+          <span>
+            <strong>Close the board (maintenance).</strong> Every page and both live feeds are hidden from viewers
+            behind a holding screen, so results can be corrected in private. Signed-in crew still see the real
+            board — which is how you check the fix.
           </span>
         </label>
       </div>

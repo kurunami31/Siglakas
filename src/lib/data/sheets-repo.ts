@@ -442,6 +442,7 @@ export function configRows(c: Config): Array<[string, string | number]> {
     ["terminology", c.terminology],
     ["points_freeze", c.pointsFreeze ? "TRUE" : "FALSE"],
     ["reveal_mode", c.revealMode ? "TRUE" : "FALSE"],
+    ["maintenance", c.maintenance ? "TRUE" : "FALSE"],
   ];
   // Emit every placement the table defines rather than only the default 1–4,
   // so a save from the admin UI can never silently drop deeper placements.
@@ -468,6 +469,7 @@ function configToConfig(kv: Record<string, string>): Partial<Config> {
     terminology: (kv.terminology as Config["terminology"]) || undefined,
     pointsFreeze: kv.points_freeze !== undefined ? bool(kv.points_freeze) : undefined,
     revealMode: kv.reveal_mode !== undefined ? bool(kv.reveal_mode) : undefined,
+    maintenance: kv.maintenance !== undefined ? bool(kv.maintenance) : undefined,
     medalPoints: {
       gold: num(kv.medal_points_gold, 3),
       silver: num(kv.medal_points_silver, 2),

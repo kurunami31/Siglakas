@@ -9,6 +9,7 @@ import { Ticker } from "@/components/ticker";
 import { Icon } from "@/components/icons";
 import { getViewerState } from "@/lib/server-state";
 import { getSession } from "@/lib/auth/server";
+import { isBoardClosed } from "@/lib/serialize";
 
 /**
  * Fonts are self-hosted by next/font rather than pulled from
@@ -58,41 +59,56 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const state = await getViewerState();
   const session = await getSession();
+  /**
+   * The maintenance switch closes the board to everyone but signed-in staff.
+   *
+   * While it is on the page is not rendered at all — not merely hidden — so a
+   * correction that is still being made cannot be read out of the payload. The
+   * provider mounts the holding screen on top instead, and re-renders this layout
+   * the moment the switch flips back, which is what brings the page back.
+   */
+  const closed = isBoardClosed(state, session?.role);
 
   return (
     <html lang="en" className={`${display.variable} ${stencil.variable} ${body.variable}`}>
       <body>
-        <a href="#main" className="sr-only sr-only-focusable print:hidden">
-          Skip to content
-        </a>
+        {!closed && (
+          <a href="#main" className="sr-only sr-only-focusable print:hidden">
+            Skip to content
+          </a>
+        )}
         <LiveProvider initial={state} role={session?.role ?? null}>
           <Ocean />
-          <SiteHeader />
-          <Ticker />
-          <main id="main" className="mx-auto w-full max-w-7xl px-3 py-5 sm:px-5 sm:py-7">
-            {children}
-          </main>
-          <footer className="mt-10 border-t border-foam/15 bg-ink/60 px-3 py-6 text-center text-xs text-foam/60 sm:px-5 print:hidden">
-            <p className="font-display flex items-center justify-center gap-2 text-base text-parchment/80">
-              <Icon name="ship" size={18} />
-              {state.config.competitionName}
-            </p>
-            <p className="mt-1">
-              {state.config.schoolName} · Original pirate-inspired artwork. Crew mascot logos are the property of their
-              respective faculties and campuses.
-            </p>
-            <p className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
-              <Link href="/welcome" className="min-h-6 text-foam/70 hover:text-straw hover:underline">
-                Welcome
-              </Link>
-              <Link href="/about" className="min-h-6 text-foam/70 hover:text-straw hover:underline">
-                About the developer
-              </Link>
-            </p>
-            <p className="mt-1">
-              Built for the Grand Line · {state.events.length} islands · {state.teams.length} crews
-            </p>
-          </footer>
+          {!closed && (
+            <>
+              <SiteHeader />
+              <Ticker />
+              <main id="main" className="mx-auto w-full max-w-7xl px-3 py-5 sm:px-5 sm:py-7">
+                {children}
+              </main>
+              <footer className="mt-10 border-t border-foam/15 bg-ink/60 px-3 py-6 text-center text-xs text-foam/60 sm:px-5 print:hidden">
+                <p className="font-display flex items-center justify-center gap-2 text-base text-parchment/80">
+                  <Icon name="ship" size={18} />
+                  {state.config.competitionName}
+                </p>
+                <p className="mt-1">
+                  {state.config.schoolName} · Original pirate-inspired artwork. Crew mascot logos are the property of their
+                  respective faculties and campuses.
+                </p>
+                <p className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+                  <Link href="/welcome" className="min-h-6 text-foam/70 hover:text-straw hover:underline">
+                    Welcome
+                  </Link>
+                  <Link href="/about" className="min-h-6 text-foam/70 hover:text-straw hover:underline">
+                    About the developer
+                  </Link>
+                </p>
+                <p className="mt-1">
+                  Built for the Grand Line · {state.events.length} islands · {state.teams.length} crews
+                </p>
+              </footer>
+            </>
+          )}
         </LiveProvider>
       </body>
     </html>

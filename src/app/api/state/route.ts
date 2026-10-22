@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getStore } from "@/lib/store/state-store";
-import { toViewerState, toVersionPayload } from "@/lib/serialize";
+import { stateForViewer, toVersionPayload } from "@/lib/serialize";
 import { getSession } from "@/lib/auth/server";
 
 export const runtime = "nodejs";
@@ -14,7 +14,7 @@ export async function GET() {
   const session = await getSession();
   return NextResponse.json(
     {
-      state: toViewerState(state, session?.role),
+      state: stateForViewer(state, session?.role),
       status: store.getStatus(),
       meta: toVersionPayload(state),
     },

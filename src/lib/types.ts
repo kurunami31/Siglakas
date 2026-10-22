@@ -154,6 +154,12 @@ export interface Config {
   pointsFreeze: boolean;
   /** Dramatic reveal overlay for the freeze. */
   revealMode: boolean;
+  /**
+   * Close the board to the public. Every page and both live-data endpoints serve
+   * a holding screen instead, so a half-finished correction can never be watched
+   * in progress. Signed-in staff are unaffected and still see the real data.
+   */
+  maintenance: boolean;
 }
 
 export interface RawSheets {

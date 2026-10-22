@@ -25,6 +25,39 @@ export function toViewerState(state: CompetitionState, role: Role | null | undef
   return can(role, "edit_result") ? state : toPublicState(state);
 }
 
+/** Signed-in staff are the only viewers the maintenance switch never applies to. */
+export function isStaff(role: Role | null | undefined): boolean {
+  return !!role;
+}
+
+/** Is the board closed to this viewer right now? */
+export function isBoardClosed(state: CompetitionState, role: Role | null | undefined): boolean {
+  return state.config.maintenance && !isStaff(role);
+}
+
+/**
+ * The payload served while the board is closed. The crew and event roster still
+ * travels — those names are printed on the programme anyway — but nothing that
+ * carries a score or a medal, so a half-finished correction cannot be read back
+ * out of the API while it is being made.
+ */
+export function toMaintenanceState(state: CompetitionState): CompetitionState {
+  return { ...state, results: [], matches: [], standings: [] };
+}
+
+/**
+ * The single answer to "what may this viewer see": maintenance first, then the
+ * draft-visibility rule. Both live endpoints and the server render go through
+ * here so they can never disagree about what is public.
+ */
+export function stateForViewer(
+  state: CompetitionState,
+  role: Role | null | undefined,
+): CompetitionState {
+  if (isBoardClosed(state, role)) return toMaintenanceState(state);
+  return toViewerState(state, role);
+}
+
 /** Lightweight payload for the version/ETag endpoint. */
 export function toVersionPayload(state: CompetitionState) {
   return {
@@ -33,5 +66,6 @@ export function toVersionPayload(state: CompetitionState) {
     eventCount: state.events.length,
     teamCount: state.teams.length,
     freeze: state.config.pointsFreeze,
+    maintenance: state.config.maintenance,
   };
 }

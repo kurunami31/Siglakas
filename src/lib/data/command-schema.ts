@@ -117,6 +117,7 @@ export const configPatchSchema = z
     terminology: z.enum(["onepiece", "plain"]).optional(),
     pointsFreeze: z.boolean().optional(),
     revealMode: z.boolean().optional(),
+    maintenance: z.boolean().optional(),
     medalPoints: z
       .object({
         gold: z.number().min(0).max(1000),

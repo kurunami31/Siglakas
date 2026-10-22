@@ -163,7 +163,28 @@ const CULTURAL_SEEDS: EventSeed[] = [
   { id: "contemporary-duo", name: "Contemporary Duo", category: "Dance Arts", medalWeight: 2, division: "cultural" },
   { id: "contemporary-dance", name: "Contemporary Dance", category: "Dance Arts", medalWeight: 10, division: "cultural" },
   { id: "street-dance", name: "Street Dance", category: "Dance Arts", medalWeight: 10, division: "cultural" },
-  { id: "dance-sports", name: "Dance Sports", category: "Dance Arts", medalWeight: 14, division: "cultural" },
+  /**
+   * Dance Sports is adjudicated per discipline, not as one aggregate. The
+   * committee's result sheet lists all twelve, and the audience asked to see
+   * them, so each is its own event at weight 1 — no `count` needed, and the
+   * medal table reads like the official document.
+   *
+   * Consequence: the printed "Dance Sports 14" becomes 12, because twelve
+   * disciplines awarding one gold each is what the sheet itself describes. That
+   * discrepancy is with the committee.
+   */
+  { id: "dancesport-slow-waltz", name: "Slow Waltz", category: "Dance Arts", medalWeight: 1, division: "cultural", scoringType: "placement" },
+  { id: "dancesport-tango", name: "Tango", category: "Dance Arts", medalWeight: 1, division: "cultural", scoringType: "placement" },
+  { id: "dancesport-viennese-waltz", name: "Viennese Waltz", category: "Dance Arts", medalWeight: 1, division: "cultural", scoringType: "placement" },
+  { id: "dancesport-foxtrot", name: "Foxtrot", category: "Dance Arts", medalWeight: 1, division: "cultural", scoringType: "placement" },
+  { id: "dancesport-quickstep", name: "Quickstep", category: "Dance Arts", medalWeight: 1, division: "cultural", scoringType: "placement" },
+  { id: "dancesport-modern-grade-a", name: "Modern Standard Grade A", category: "Dance Arts", medalWeight: 1, division: "cultural", scoringType: "placement" },
+  { id: "dancesport-samba", name: "Samba", category: "Dance Arts", medalWeight: 1, division: "cultural", scoringType: "placement" },
+  { id: "dancesport-chachacha", name: "Chachacha", category: "Dance Arts", medalWeight: 1, division: "cultural", scoringType: "placement" },
+  { id: "dancesport-rumba", name: "Rumba", category: "Dance Arts", medalWeight: 1, division: "cultural", scoringType: "placement" },
+  { id: "dancesport-paso-doble", name: "Paso Doble", category: "Dance Arts", medalWeight: 1, division: "cultural", scoringType: "placement" },
+  { id: "dancesport-jive", name: "Jive", category: "Dance Arts", medalWeight: 1, division: "cultural", scoringType: "placement" },
+  { id: "dancesport-latin-grade-a", name: "Latin American Grade A", category: "Dance Arts", medalWeight: 1, division: "cultural", scoringType: "placement" },
   // Dramatic Arts — 19
   { id: "short-sweet-dialogue", name: "Short and Sweet Play (Dialogue)", category: "Dramatic Arts", medalWeight: 5, division: "cultural" },
   { id: "short-sweet-musical", name: "Short and Sweet Play (Musical)", category: "Dramatic Arts", medalWeight: 5, division: "cultural" },
@@ -339,6 +360,7 @@ export const DEFAULT_CONFIG: Config = {
   terminology: "onepiece",
   pointsFreeze: false,
   revealMode: false,
+  maintenance: false,
 };
 
 /* ------------------------------------------------------------------ *

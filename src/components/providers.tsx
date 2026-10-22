@@ -10,8 +10,10 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useRouter } from "next/navigation";
 import type { CompetitionState, Role } from "@/lib/types";
 import { Icon } from "./icons";
+import { MaintenanceScene } from "./maintenance";
 
 export interface Toast {
   id: number;
@@ -47,8 +49,16 @@ export function LiveProvider({
   const [degraded, setDegraded] = useState(false);
   const [transport, setTransport] = useState<"sse" | "polling">("sse");
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const router = useRouter();
   const lastVersion = useRef(initial.version);
   const toastSeq = useRef(0);
+  /**
+   * The maintenance switch is read on every render rather than at mount, so a
+   * viewer who already had the board open loses it the moment the Secretariat
+   * closes it. `role` comes from the server session and cannot be faked here.
+   */
+  const closed = state.config.maintenance && !role;
+  const wasClosed = useRef(closed);
   const lastAnnouncement = useRef(initial.announcements[0]?.timestamp ?? "");
   const lastResultCount = useRef(initial.results.length);
 
@@ -182,6 +192,16 @@ export function LiveProvider({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /**
+   * Reopened while this viewer was looking at the holding screen. The closed
+   * board is never rendered server-side, so there is no page sitting underneath
+   * to reveal — the layout has to be re-rendered to bring it back.
+   */
+  useEffect(() => {
+    if (wasClosed.current && !closed) router.refresh();
+    wasClosed.current = closed;
+  }, [closed, router]);
+
   const value = useMemo<LiveContextValue>(
     () => ({ state, role, connected, degraded, transport, pushToast }),
     [state, role, connected, degraded, transport, pushToast],
@@ -190,7 +210,8 @@ export function LiveProvider({
   return (
     <LiveContext.Provider value={value}>
       {children}
-      <ToastStack toasts={toasts} onDismiss={(id) => setToasts((p) => p.filter((t) => t.id !== id))} />
+      {closed && <MaintenanceScene competitionName={state.config.competitionName} />}
+      {!closed && <ToastStack toasts={toasts} onDismiss={(id) => setToasts((p) => p.filter((t) => t.id !== id))} />}
     </LiveContext.Provider>
   );
 }

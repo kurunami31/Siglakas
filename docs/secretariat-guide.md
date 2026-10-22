@@ -159,6 +159,26 @@ when the protest clears.
 Both are one switch away and instant. Unfreeze as soon as the ceremony ends, or the
 public site looks broken.
 
+### Closing the board for maintenance
+
+**Admin → Point system → Suspense → Close the board (maintenance)** (`maintenance`)
+does something stronger than a freeze: every page and both live feeds
+(`/api/state`, `/api/stream`) serve a holding screen instead of the tally. Freeze
+hides *who is winning*; maintenance hides *everything*, including event pages and
+the API payload, so a correction can be made in private.
+
+Use it when the numbers are wrong rather than unannounced — fixing a medal weight,
+re-attributing a crew, or cleaning up a run of bad rows. The moment the switch is
+on, a viewer who already had the board open loses it too; the moment it is off,
+they get it back without reloading.
+
+- Signed-in crew see the real board the whole time — that is how you check the fix.
+  `/login` is closed along with everything else, so sign in from the holding screen.
+- The public cannot fetch the data while it is closed: the endpoints return an empty
+  board, not the working copy.
+- Turn it **off** when the correction is finished and verified. It is not a
+  substitute for `points_freeze` and leaving it on makes the site look abandoned.
+
 ### The audit log
 
 **Admin → Audit** lists every write: when, who, what, and the before/after values.

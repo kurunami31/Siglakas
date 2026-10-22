@@ -1,5 +1,5 @@
 import { getStore } from "@/lib/store/state-store";
-import { toViewerState } from "@/lib/serialize";
+import { stateForViewer } from "@/lib/serialize";
 import { getSession } from "@/lib/auth/server";
 
 export const runtime = "nodejs";
@@ -39,7 +39,7 @@ export async function GET(request: Request) {
 
       const initialState = store.getState()!;
       let lastVersion = initialState.version;
-      write("snapshot", { state: toViewerState(initialState, role), status: store.getStatus() });
+      write("snapshot", { state: stateForViewer(initialState, role), status: store.getStatus() });
 
       const cleanup = () => {
         if (closed) return;
@@ -56,7 +56,7 @@ export async function GET(request: Request) {
       unsubscribe = store.subscribe((state) => {
         if (state.version === lastVersion) return;
         lastVersion = state.version;
-        write("snapshot", { state: toViewerState(state, role), status: store.getStatus() });
+        write("snapshot", { state: stateForViewer(state, role), status: store.getStatus() });
       });
 
       // keep the sheet fresh + heartbeat so proxies don't drop the connection
@@ -66,7 +66,7 @@ export async function GET(request: Request) {
           const fresh = await store.ensureFresh(4500);
           if (fresh.version !== lastVersion) {
             lastVersion = fresh.version;
-            write("snapshot", { state: toViewerState(fresh, role), status: store.getStatus() });
+            write("snapshot", { state: stateForViewer(fresh, role), status: store.getStatus() });
           } else {
             write("ping", { at: Date.now(), status: store.getStatus() });
           }

@@ -284,14 +284,16 @@ describe("seed catalogue integrity", () => {
     expect(teams.filter((t) => t.group === "extension_campus")).toHaveLength(5);
   });
 
-  it("has the full 98-event catalogue totalling 428 medals per colour", () => {
-    // The Saludo was added after the sheet was seeded: it is its own competition
-    // rather than Cheer Dance, at weight 2. It is absent from the printed
-    // socio-cultural point system, which predates it — hence Special Category 38
-    // and a cultural 164 there, against 40 and 166 here.
-    expect(EVENTS).toHaveLength(98);
+  it("has the full 109-event catalogue totalling 426 medals per colour", () => {
+    // Two deliberate departures from the printed point system. The Saludo was
+    // added after the sheet was seeded, as its own competition at weight 2 — the
+    // printed sheet predates it, hence Special Category 38 and a cultural 164
+    // there against 40 and 166 here. And Dance Sports is adjudicated per
+    // discipline: twelve events at weight 1 against the printed "14", because the
+    // committee's own result sheet lists twelve disciplines worth one gold each.
+    expect(EVENTS).toHaveLength(109);
     const total = EVENTS.reduce((sum, e) => sum + e.medalWeight, 0);
-    expect(total).toBe(428);
+    expect(total).toBe(426);
   });
 
   it("matches the printed section subtotals", () => {
@@ -308,18 +310,20 @@ describe("seed catalogue integrity", () => {
     // catalogue now deliberately disagrees with the manual's own arithmetic by 4.
     // This is a recorded decision, not an oversight.
     expect(sum("Music Arts")).toBe(39);
-    expect(sum("Dance Arts")).toBe(46);
+    // 44, not the printed 46: Dance Sports is twelve events at weight 1 rather
+    // than one at 14, which is what the committee's result sheet describes.
+    expect(sum("Dance Arts")).toBe(44);
     expect(sum("Dramatic Arts")).toBe(19);
     expect(sum("Literary Arts")).toBe(13);
     // 40, not the printed 38: the Saludo (2) is not on that sheet.
     expect(sum("Special Category")).toBe(40);
   });
 
-  it("splits 266 sports / 162 cultural", () => {
+  it("splits 266 sports / 160 cultural", () => {
     const sports = EVENTS.filter((e) => e.division === "sports").reduce((s, e) => s + e.medalWeight, 0);
     const cultural = EVENTS.filter((e) => e.division === "cultural").reduce((s, e) => s + e.medalWeight, 0);
     expect(sports).toBe(266);
-    expect(cultural).toBe(162);
+    expect(cultural).toBe(160);
   });
 
   it("gives every judged event weighted criteria", () => {

@@ -24,6 +24,18 @@ export interface TeamAlias {
  * all reach `bec`. Values that resolve to nothing are returned untouched, so a
  * genuine typo still shows up in `check-sheet` instead of being guessed at.
  */
+/**
+ * Abbreviations the committee's official result sheet uses where they differ
+ * from anything the app stores: `FHSC` for the Faculty of Human Sciences and
+ * Communication, `SIC` for San Isidro. Both appear in the SIGLAKAS 2026 result
+ * PDF, and without them a row typed that way is dropped in silence — the exact
+ * trap this resolver exists to close, which already cost a crew seven results.
+ */
+const CREW_ABBREVIATIONS: Record<string, string> = {
+  fhsc: "fahuscic",
+  sic: "siec",
+};
+
 export function teamResolver(teams: TeamAlias[]): (value: string) => string {
   const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
   const index = new Map<string, string>();
@@ -33,6 +45,10 @@ export function teamResolver(teams: TeamAlias[]): (value: string) => string {
       const key = norm(alias ?? "");
       if (key && !index.has(key)) index.set(key, t.id);
     }
+  }
+  // Committee abbreviations last, so a crew's own name always wins over one.
+  for (const [key, id] of Object.entries(CREW_ABBREVIATIONS)) {
+    if (!index.has(key) && teams.some((t) => t.id === id)) index.set(key, id);
   }
   return (value) => index.get(norm(value ?? "")) ?? value;
 }
@@ -99,7 +115,14 @@ export function deriveState(raw: RawSheets, options: DeriveOptions = {}): Compet
     m: matches,
     j: raw.judgeScores.length,
     c: raw.announcements.length,
-    g: [config.championshipRankBy, config.pointsFreeze, config.revealMode, config.terminology, config.competitionName],
+    g: [
+      config.championshipRankBy,
+      config.pointsFreeze,
+      config.revealMode,
+      config.maintenance,
+      config.terminology,
+      config.competitionName,
+    ],
   });
 
   return {
@@ -128,6 +151,7 @@ function sanitizeConfig(input: Record<string, unknown>): Partial<Config> {
   if (input.terminology === "onepiece" || input.terminology === "plain") out.terminology = input.terminology;
   if (typeof input.pointsFreeze === "boolean") out.pointsFreeze = input.pointsFreeze;
   if (typeof input.revealMode === "boolean") out.revealMode = input.revealMode;
+  if (typeof input.maintenance === "boolean") out.maintenance = input.maintenance;
   if (typeof input.medalPoints === "object" && input.medalPoints) {
     const mp = input.medalPoints as Record<string, unknown>;
     out.medalPoints = {
