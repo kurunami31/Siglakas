@@ -75,15 +75,19 @@ const boolRule = () => {
 };
 
 /**
- * Drop-down options for the crew columns.
+ * Drop-down options for the crew columns: one entry per crew.
  *
- * Ids *and* short names. The sheet's crew columns are hand-edited during the
- * festival and `teamResolver` deliberately accepts either form (see
- * `src/lib/data/derive.ts`), so a dropdown offering only ids would flag cells
- * the reader resolves perfectly well — which is exactly what happened when a
- * crew was renamed to its printed abbreviation.
+ * The crews are listed by short name, lower-cased, because that is what the
+ * sheet's crew columns actually read — `facet`, `fted`, `b-lec`. Offering ids
+ * *and* names as well listed every crew twice (for eleven of them the id and the
+ * short name are the same word in different case), which made the drop-down look
+ * broken and ambiguous to pick from.
+ *
+ * `teamResolver` still accepts an id, a short name, a full name or "The
+ * {mascot}" — see `src/lib/data/derive.ts` — so a hand-typed row keeps working;
+ * the list is guidance, not a cage. `strict` stays off for the same reason.
  */
-const TEAM_OPTIONS = [...TEAMS.map((t) => t.id), ...TEAMS.map((t) => t.shortName)];
+const TEAM_OPTIONS = TEAMS.map((t) => t.shortName.toLowerCase());
 
 const VALIDATION: Array<{
   tab: TabKey;
