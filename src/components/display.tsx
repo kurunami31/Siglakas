@@ -12,6 +12,7 @@ import { accentFor, formatBounty } from "@/lib/format";
 import { terms } from "@/lib/terminology";
 import { relativeTime } from "@/lib/format";
 import { Icon, MedalCount, MedalIcon } from "./icons";
+import { SealedStandings } from "./effects";
 
 const ROTATE_MS = 12_000;
 
@@ -32,15 +33,28 @@ export function DisplayView() {
     [state.results],
   );
 
+  const frozen = state.config.pointsFreeze;
+  /**
+   * While the board is sealed the TV shows the holding screen instead of the
+   * standings: the overall table, the medal tally, live scores and the latest
+   * results all give the reveal away. Announcements stay, because during a
+   * closing-ceremony freeze they are the one thing the room still needs.
+   */
   const slides = useMemo(
-    () => [
-      { id: "overall", label: t.overall },
-      { id: "medals", label: "Medal Tally" },
-      ...(liveMatches.length ? [{ id: "live", label: "Live Matches" }] : []),
-      { id: "latest", label: "Latest Results" },
-      ...(state.announcements.length ? [{ id: "news", label: "Announcements" }] : []),
-    ],
-    [t.overall, liveMatches.length, state.announcements.length],
+    () =>
+      frozen
+        ? [
+            ...(state.announcements.length ? [{ id: "news", label: "Announcements" }] : []),
+            { id: "sealed", label: "Sealed" },
+          ]
+        : [
+            { id: "overall", label: t.overall },
+            { id: "medals", label: "Medal Tally" },
+            ...(liveMatches.length ? [{ id: "live", label: "Live Matches" }] : []),
+            { id: "latest", label: "Latest Results" },
+            ...(state.announcements.length ? [{ id: "news", label: "Announcements" }] : []),
+          ],
+    [frozen, t.overall, liveMatches.length, state.announcements.length],
   );
 
   const next = useCallback(() => setIndex((i) => (i + 1) % slides.length), [slides.length]);
@@ -162,6 +176,7 @@ export function DisplayView() {
             {current?.id === "live" && <SlideLive matches={liveMatches} state={state} />}
             {current?.id === "latest" && <SlideLatest results={latestResults} state={state} />}
             {current?.id === "news" && <SlideNews state={state} />}
+            {current?.id === "sealed" && <SealedStandings>{null}</SealedStandings>}
           </motion.section>
         </AnimatePresence>
       </div>

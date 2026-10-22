@@ -3,8 +3,11 @@
 import { useEffect, useRef } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import type { Team } from "@/lib/types";
+import { sortStandings } from "@/lib/scoring/rank";
+import { accentFor } from "@/lib/format";
 import { TeamBadge } from "./team-badge";
 import { Icon } from "./icons";
+import { useLive } from "./providers";
 
 interface Particle {
   x: number;
@@ -153,5 +156,32 @@ export function SealedBoard({
       )}
       <CoinBurst trigger={sealed} colors={colors} />
     </div>
+  );
+}
+
+/**
+ * Seals a block that gives the standings away.
+ *
+ * The freeze used to wrap only the home leaderboard, so the audience could read
+ * everything the Secretariat had locked straight off the Medal Tally page, the
+ * TV slides and a crew's own page. Anything showing medals, rank or bounty goes
+ * through here rather than testing `pointsFreeze` by hand, so a new surface
+ * cannot quietly forget to close.
+ */
+export function SealedStandings({ children }: { children: React.ReactNode }) {
+  const { state } = useLive();
+  const top = sortStandings(state.standings, "overall").slice(0, 3);
+  const colors = state.teams.map((x) => accentFor(x.color));
+
+  return (
+    <SealedBoard
+      sealed={state.config.pointsFreeze}
+      teams={top
+        .map((s) => state.teams.find((x) => x.id === s.teamId))
+        .filter((x): x is Team => !!x)}
+      colors={colors}
+    >
+      {children}
+    </SealedBoard>
   );
 }

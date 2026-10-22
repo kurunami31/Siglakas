@@ -152,8 +152,11 @@ when the protest clears.
 
 **Admin → Point system → Suspense**:
 
-- **Freeze the public board** (`points_freeze`) hides the standings from viewers.
-  Use it before a closing-ceremony announcement so the reveal isn't spoiled.
+- **Freeze the public board** (`points_freeze`) hides the standings from viewers —
+  the home board, the Medal Tally page, every crew page, and the TV slides (which
+  drop to announcements plus a sealed screen). Use it before a closing-ceremony
+  announcement so the reveal isn't spoiled. Per-event results stay visible; the
+  freeze hides the standings, not who placed in what.
 - **Reveal mode** drives the closing presentation.
 
 Both are one switch away and instant. Unfreeze as soon as the ceremony ends, or the
