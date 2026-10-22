@@ -203,25 +203,20 @@ export function WantedPoster({
         </div>
 
         <div className="min-w-0 flex-1">
-          <p className="font-stencil text-[0.62rem] uppercase tracking-[0.2em] text-[#7a5a2e]">
+          <p className="font-stencil truncate text-[0.62rem] uppercase tracking-[0.2em] text-[#7a5a2e]">
             Wanted · Rank {rank}
           </p>
           <h3 className="font-display truncate text-xl leading-tight text-[#2c1d0c] sm:text-2xl">
             The {team.mascot}
           </h3>
           <p className="truncate text-[0.72rem] font-semibold text-[#5a4426]">{team.name}</p>
-
-          {/* The medal tally sits where the bounty used to: it is the thing the
-              board is read for, so it gets the display type and full-size
-              medals rather than a row of 16px icons. */}
-          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
-            <MedalCount kind="gold" value={<CountUp value={gold} />} size={medalIcon} className={medalText} />
-            <MedalCount kind="silver" value={<CountUp value={silver} />} size={medalIcon} className={medalText} />
-            <MedalCount kind="bronze" value={<CountUp value={bronze} />} size={medalIcon} className={medalText} />
-          </div>
         </div>
 
-        <div className="shrink-0 rounded-lg bg-ink/85 px-2 py-1.5 text-center text-parchment">
+        {/* A minimum width rather than a fixed one: identical for one, two and
+            three digits — every realistic haul — so the badge cannot resize the
+            header as a crew pulls ahead, and it will only ever grow rather than
+            clip a number. */}
+        <div className="min-w-12 shrink-0 rounded-lg bg-ink/85 px-2 py-1.5 text-center text-parchment">
           <span className="block font-display text-lg leading-none">
             <CountUp value={total} />
           </span>
@@ -229,13 +224,29 @@ export function WantedPoster({
         </div>
       </div>
 
-      <div className="relative mt-3 flex items-center gap-3 border-t border-[#8a6534]/30 pt-2 text-[0.72rem] font-semibold text-[#4a3618]">
+      {/* The medal tally sits where the bounty used to: it is the thing the
+          board is read for, so it gets the display type and full-size medals
+          rather than a row of 16px icons.
+
+          It spans the whole card rather than a share of the header because that
+          share is too narrow for it: inside the text column a third digit
+          wrapped the row onto a second line, so a crew with a big haul drew a
+          taller card than a crew with a small one and the board stopped being a
+          grid. Three equal columns hold one line at every width, and they line
+          the crews' medals up down the page. */}
+      <div className="relative mt-2.5 grid grid-cols-3 items-center gap-x-3">
+        <MedalCount kind="gold" value={<CountUp value={gold} />} size={medalIcon} className={medalText} />
+        <MedalCount kind="silver" value={<CountUp value={silver} />} size={medalIcon} className={medalText} />
+        <MedalCount kind="bronze" value={<CountUp value={bronze} />} size={medalIcon} className={medalText} />
+      </div>
+
+      <div className="relative mt-2.5 flex items-center gap-3 border-t border-[#8a6534]/30 pt-2 text-[0.72rem] font-semibold text-[#4a3618]">
         {/* The bounty moved down here when the medals took its place. */}
-        <span className="font-display text-lg text-[#7a2b12]" title={formatBounty(points)}>
+        <span className="font-display min-w-0 truncate text-lg text-[#7a2b12]" title={formatBounty(points)}>
           <CountUp value={points} format={(n) => formatBounty(n)} />
         </span>
         <RankArrow change={rankChange} />
-        <span className="ml-auto truncate text-[#6b4a2b]" aria-hidden style={{ color: `rgb(${rgb} / 1)` }}>
+        <span className="ml-auto shrink-0 text-[#6b4a2b]" aria-hidden style={{ color: `rgb(${rgb} / 1)` }}>
           <span className="inline-block h-2.5 w-2.5 rounded-full align-middle" style={{ background: accent, boxShadow: `0 0 8px ${accent}` }} />
         </span>
       </div>

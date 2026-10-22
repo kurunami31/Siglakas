@@ -50,8 +50,12 @@ export function CountUp({ value, format = (n) => Math.round(n).toLocaleString("e
   // A plain <span> cannot carry aria-label (axe: aria-prohibited-attr). Provide
   // the final value as real (visually hidden) text instead, and keep the
   // animating number out of the accessibility tree entirely.
+  //
+  // `tabular-nums` is not decoration: with proportional digits a rolling number
+  // changes width on almost every frame, which visibly twitches the card it sits
+  // in and — on the Bounty Board — re-wraps the row it shares.
   return (
-    <span className={className}>
+    <span className={className ? `tabular-nums ${className}` : "tabular-nums"}>
       <span className="sr-only">{format(value)}</span>
       <span aria-hidden>{format(display)}</span>
     </span>
