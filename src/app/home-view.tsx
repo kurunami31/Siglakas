@@ -43,10 +43,12 @@ export function HomeView() {
             board they are the only thing telling the room what happens next. */}
         <SealedStandings>
           <ul className="mt-3 space-y-1.5">
-            {state.results
+            {[...state.results]
               .filter((r) => r.status === "published")
-              .slice(-8)
-              .reverse()
+              // The sheet files results by event, so the newest is found by
+              // timestamp rather than by trusting the bottom of the tab.
+              .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
+              .slice(0, 8)
               .map((r, i) => {
                 const team = state.teams.find((x) => x.id === r.teamId);
                 const event = state.events.find((x) => x.id === r.eventId);

@@ -11,7 +11,7 @@ import {
   type ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
-import type { CompetitionState, Role } from "@/lib/types";
+import type { CompetitionState, Result, Role } from "@/lib/types";
 import { Icon } from "./icons";
 import { MaintenanceScene } from "./maintenance";
 
@@ -84,7 +84,12 @@ export function LiveProvider({
       if (next.results.length > lastResultCount.current) {
         lastResultCount.current = next.results.length;
         const published = next.results.filter((r) => r.status === "published");
-        const newest = published[published.length - 1];
+        // Most recent by timestamp, not by row position: the sheet files results
+        // by event, so the last row is not the latest one.
+        const newest = published.reduce<Result | undefined>(
+          (best, r) => (!best || r.timestamp > best.timestamp ? r : best),
+          undefined,
+        );
         const team = newest && next.teams.find((t) => t.id === newest.teamId);
         const event = newest && next.events.find((e) => e.id === newest.eventId);
         if (team && event) {
