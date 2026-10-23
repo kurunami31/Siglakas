@@ -1,7 +1,7 @@
 "use client";
 
 import { Leaderboard } from "@/components/leaderboard";
-import { SealedBoard } from "@/components/effects";
+import { SealedBoard, SealedStandings } from "@/components/effects";
 import { useLive } from "@/components/providers";
 import { CrewParade } from "@/components/crew-parade";
 import { terms } from "@/lib/terminology";
@@ -37,39 +37,45 @@ export function HomeView() {
           <Icon name="signal" size={22} className="text-straw" /> Live activity feed
         </h2>
         <Ticker />
-        <ul className="mt-3 space-y-1.5">
-          {state.results
-            .filter((r) => r.status === "published")
-            .slice(-8)
-            .reverse()
-            .map((r, i) => {
-              const team = state.teams.find((x) => x.id === r.teamId);
-              const event = state.events.find((x) => x.id === r.eventId);
-              if (!team || !event) return null;
-              return (
-                <li key={`${r.eventId}-${r.teamId}-${i}`} className="flex items-center gap-2 rounded-lg border border-foam/10 bg-ink/40 px-2.5 py-1.5 text-sm">
-                  {r.placement >= 1 && r.placement <= 3 ? (
-                    <MedalIcon
-                      kind={r.placement === 1 ? "gold" : r.placement === 2 ? "silver" : "bronze"}
-                      size={16}
-                    />
-                  ) : (
-                    <span aria-hidden className="inline-block h-2 w-2 shrink-0 rounded-full bg-foam/40" />
-                  )}
-                  <span className="min-w-0 truncate">
-                    <strong className="text-parchment">{team.shortName}</strong>{" "}
-                    <span className="text-foam/80">
-                      {r.placement === 1 ? "took 1st" : r.placement === 2 ? "took 2nd" : r.placement === 3 ? "took 3rd" : "competed"} in {event.name}
+        {/* The feed names who placed and what the placing was worth — the
+            standings in running order — so it closes with the board. The
+            announcements above it stay: they give nothing away, and on a frozen
+            board they are the only thing telling the room what happens next. */}
+        <SealedStandings>
+          <ul className="mt-3 space-y-1.5">
+            {state.results
+              .filter((r) => r.status === "published")
+              .slice(-8)
+              .reverse()
+              .map((r, i) => {
+                const team = state.teams.find((x) => x.id === r.teamId);
+                const event = state.events.find((x) => x.id === r.eventId);
+                if (!team || !event) return null;
+                return (
+                  <li key={`${r.eventId}-${r.teamId}-${i}`} className="flex items-center gap-2 rounded-lg border border-foam/10 bg-ink/40 px-2.5 py-1.5 text-sm">
+                    {r.placement >= 1 && r.placement <= 3 ? (
+                      <MedalIcon
+                        kind={r.placement === 1 ? "gold" : r.placement === 2 ? "silver" : "bronze"}
+                        size={16}
+                      />
+                    ) : (
+                      <span aria-hidden className="inline-block h-2 w-2 shrink-0 rounded-full bg-foam/40" />
+                    )}
+                    <span className="min-w-0 truncate">
+                      <strong className="text-parchment">{team.shortName}</strong>{" "}
+                      <span className="text-foam/80">
+                        {r.placement === 1 ? "took 1st" : r.placement === 2 ? "took 2nd" : r.placement === 3 ? "took 3rd" : "competed"} in {event.name}
+                      </span>
                     </span>
-                  </span>
-                  <span className="ml-auto shrink-0 text-xs text-straw">+{event.medalWeight} medals</span>
-                </li>
-              );
-            })}
-          {state.results.filter((r) => r.status === "published").length === 0 && (
-            <li className="text-sm italic text-foam/60">No results yet — the {t.events.toLowerCase()} are about to begin.</li>
-          )}
-        </ul>
+                    <span className="ml-auto shrink-0 text-xs text-straw">+{event.medalWeight} medals</span>
+                  </li>
+                );
+              })}
+            {state.results.filter((r) => r.status === "published").length === 0 && (
+              <li className="text-sm italic text-foam/60">No results yet — the {t.events.toLowerCase()} are about to begin.</li>
+            )}
+          </ul>
+        </SealedStandings>
       </section>
     </div>
   );
